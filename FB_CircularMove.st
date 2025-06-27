@@ -1,3 +1,9 @@
+//
+// Function block implementing a circular movement from P1 to P3 while
+// passing through P2.  The block calculates the centre of the circle and
+// generates a velocity vector to follow the arc at a trapezoidal speed
+// profile.
+//
 FUNCTION_BLOCK FB_CircularMove
 VAR_INPUT
     P1 : POS2D;             // Start point
@@ -33,35 +39,43 @@ VAR
     AngularSpeed : REAL;
     t_dec : REAL;
 
-    D : REAL;
-    Ux, Uy : REAL;
-    Vx, Vy : REAL;
-    Wx, Wy : REAL;
-	SELECT: INT;
+    (* Variables for circle center calculation using perpendicular bisectors *)
+    dx12, dy12, dx23, dy23 : REAL;
+    M12X, M12Y, M23X, M23Y : REAL;
+    RHS1, RHS2, D : REAL;
 END_VAR
 
 // Main calculation block: Move from P1 to P3 through P2 along a circular arc
 
-// Calculate circle center using perpendicular bisectors method
-Ux := 0.5 * (P1.X + P2.X);
-Uy := 0.5 * (P1.Y + P2.Y);
-Vx := 0.5 * (P2.X + P3.X);
-Vy := 0.5 * (P2.Y + P3.Y);
+// Calculate circle center using perpendicular bisector intersection
+dx12 := P2.X - P1.X;
+dy12 := P2.Y - P1.Y;
+dx23 := P3.X - P2.X;
+dy23 := P3.Y - P2.Y;
 
-Wx := P2.X - P1.X;
-Wy := P2.Y - P1.Y;
+// Mid‑points of the two chords
+M12X := (P1.X + P2.X) * 0.5;
+M12Y := (P1.Y + P2.Y) * 0.5;
+M23X := (P2.X + P3.X) * 0.5;
+M23Y := (P2.Y + P3.Y) * 0.5;
 
-// Prevent division by zero and stop motion if the arc is undefined (points are collinear)
-D := 2 * (Wx * (P3.Y - P2.Y) - Wy * (P3.X - P2.X));
+// Determinant for the 2×2 system
+D := dx12 * dy23 - dy12 * dx23;
 
-IF D = 0 THEN
-    SpeedX := 0;
-    SpeedY := 0;
+// Abort if points are collinear (determinant ≈ 0)
+IF ABS(D) < 1e‑6 THEN
+    SpeedX := 0.0;
+    SpeedY := 0.0;
     RETURN;
 END_IF;
 
-CenterX := ((P3.Y - P2.Y)*(Ux*Wx + Uy*Wy) - (P3.X - P2.X)*(Vx*Wx + Vy*Wy)) / D;
-CenterY := ((P3.X - P2.X)*(Ux*Wx + Uy*Wy) - (P3.Y - P2.Y)*(Vx*Wx + Vy*Wy)) / -D;
+// Right‑hand sides of the linear equations
+RHS1 := dx12 * M12X + dy12 * M12Y;
+RHS2 := dx23 * M23X + dy23 * M23Y;
+
+// Intersection of the two perpendicular bisectors → circle centre
+CenterX := (RHS1 * dy23 - dy12 * RHS2) / D;
+CenterY := (dx12 * RHS2 - RHS1 * dx23) / D;
 
 Radius := SQRT((P1.X - CenterX)*(P1.X - CenterX) + (P1.Y - CenterY)*(P1.Y - CenterY));
 StartAngle := FU_atan2(P1.Y - CenterY, P1.X - CenterX);
@@ -132,3 +146,4 @@ Angle := StartAngle + Dir * (s_t / Radius);
 AngularSpeed := v / Radius;
 SpeedX := -SIN(Angle) * AngularSpeed * Radius;
 SpeedY := COS(Angle) * AngularSpeed * Radius;
+// End of FB_CircularMove
