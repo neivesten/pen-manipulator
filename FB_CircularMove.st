@@ -147,3 +147,4 @@ AngularSpeed := v / Radius;
 SpeedX := -SIN(Angle) * AngularSpeed * Radius;
 SpeedY := COS(Angle) * AngularSpeed * Radius;
 // End of FB_CircularMove
+END_FUNCTION_BLOCK

@@ -27,3 +27,4 @@ ELSE
 END_IF;
 FU_atan2 := result;
 // End of FU_atan2
+END_FUNCTION
