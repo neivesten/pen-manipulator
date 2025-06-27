@@ -1,3 +1,8 @@
+//
+// Basic implementation of the mathematical ATAN2 function.  It returns
+// the angle of the vector (x, y) in radians and mirrors the behaviour of
+// the standard C function of the same name.
+//
 FUNCTION FU_atan2 : REAL
 VAR_INPUT
     y : REAL;
@@ -21,3 +26,4 @@ ELSE
     result := 0.0;
 END_IF;
 FU_atan2 := result;
+// End of FU_atan2

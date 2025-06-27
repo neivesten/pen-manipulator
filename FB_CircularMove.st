@@ -1,3 +1,9 @@
+//
+// Function block implementing a circular movement from P1 to P3 while
+// passing through P2.  The block calculates the centre of the circle and
+// generates a velocity vector to follow the arc at a trapezoidal speed
+// profile.
+//
 FUNCTION_BLOCK FB_CircularMove
 VAR_INPUT
     P1 : POS2D;             // Start point
@@ -132,3 +138,5 @@ Angle := StartAngle + Dir * (s_t / Radius);
 AngularSpeed := v / Radius;
 SpeedX := -SIN(Angle) * AngularSpeed * Radius;
 SpeedY := COS(Angle) * AngularSpeed * Radius;
+
+// End of FB_CircularMove

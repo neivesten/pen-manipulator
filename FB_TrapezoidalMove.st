@@ -1,3 +1,8 @@
+//
+// Function block implementing a trapezoidal speed profile for linear
+// movements.  The block accelerates from the start position, maintains a
+// constant speed and optionally decelerates at the end.
+//
 TYPE POS2D :
 STRUCT
     X : REAL;
@@ -69,3 +74,6 @@ ELSE
     SpeedY := v * DirY;
 END_IF;
 END_FUNCTION_BLOCK
+
+// End of FB_TrapezoidalMove
+

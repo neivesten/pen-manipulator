@@ -1,3 +1,9 @@
+//
+// Main program that iterates through an array of PathPoint records and
+// feeds the motion function blocks.  The current position is integrated
+// from the velocity outputs of the blocks to provide a simple simulation
+// of the manipulator motion.
+//
 PROGRAM PLC_PRG
 VAR
     // Visualization and motion tracking variables
@@ -95,3 +101,5 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
         END_IF;
     END_IF;
 END_IF;
+
+// End of PLC_PRG
