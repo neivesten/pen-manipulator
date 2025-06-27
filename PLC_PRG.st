@@ -40,7 +40,7 @@ VAR
     ];
     CurrentIndex : INT := 1;
     PathLength : INT := 3;
-    MoveFB : FB_TrapezoidalMove;
+    MoveFB : FB_LinealMove;
     ArcFB : FB_CircularMove;
 END_VAR
 

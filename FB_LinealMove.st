@@ -3,14 +3,7 @@
 // movements.  The block accelerates from the start position, maintains a
 // constant speed and optionally decelerates at the end.
 //
-TYPE POS2D :
-STRUCT
-    X : REAL;
-    Y : REAL;
-END_STRUCT
-END_TYPE
-
-FUNCTION_BLOCK 
+FUNCTION_BLOCK FB_LinealMove
 VAR_INPUT
     StartPos : POS2D;   // Starting position
     TargetPos : POS2D;  // Target position
@@ -36,7 +29,7 @@ VAR
 END_VAR
 
 // Compute direction and total distance
-TotalDist := SQRT((TargetPos.X - StartPos.X)**2 + (TargetPos.Y - StartPos.Y)**2);
+TotalDist := SQRT(EXPT(TargetPos.X - StartPos.X,2) + EXPT(TargetPos.Y - StartPos.Y,2));
 IF TotalDist = 0 THEN
     SpeedX := 0;
     SpeedY := 0;
@@ -73,7 +66,6 @@ ELSE
     SpeedX := v * DirX;
     SpeedY := v * DirY;
 END_IF;
-END_FUNCTION_BLOCK
 
 // End of FB_TrapezoidalMove
 
