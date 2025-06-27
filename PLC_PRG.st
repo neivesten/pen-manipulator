@@ -33,16 +33,13 @@ VAR
     Reset : BOOL := FALSE;
 
     Path : ARRAY[1..2] OF PathPoint := [
-        (P1:=(X:=25.0, Y:=0.0), P2:=(X:=125.0, Y:=150.0), P3:=(X:=125.0, Y:=150.0), IsArc:=FALSE, End:=FALSE),
+        (P1:=(X:=25.0, Y:=150.0), P2:=(X:=125.0, Y:=150.0), P3:=(X:=125.0, Y:=150.0), IsArc:=FALSE, End:=FALSE),
         (P1:=(X:=125.0, Y:=150.0), P2:=(X:=250.0, Y:=250.0), P3:=(X:=125.0, Y:=350.0), IsArc:=TRUE, End:=TRUE)
     ];
     CurrentIndex : INT := 1;
     PathLength : INT := 2;
     MoveFB : FB_TrapezoidalMove;
     ArcFB : FB_CircularMove;
-    StartRel : Pos2D;
-    MidRel : Pos2D;
-    EndRel : Pos2D;
 END_VAR
 
 // Automatic reset on first cycle
@@ -65,7 +62,7 @@ IF Reset THEN
     // Initialise the visualisation values
     VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
     VisuPosY := TO_INT(TCPRel.Y - CircleWidth / 2.0);
-    
+
     Reset := FALSE;
 END_IF
 
@@ -73,17 +70,11 @@ END_IF
 IF MotionActive AND CurrentIndex <= PathLength THEN
     t := t + cycle_time;
 
-    StartRel.X := Path[CurrentIndex].P1.X - StartOffset.X;
-    StartRel.Y := Path[CurrentIndex].P1.Y - StartOffset.Y;
-
     IF NOT Path[CurrentIndex].IsArc THEN
-        EndRel.X := Path[CurrentIndex].P2.X - StartOffset.X;
-        EndRel.Y := Path[CurrentIndex].P2.Y - StartOffset.Y;
-
         // Handle linear motion segments
         MoveFB(
-            StartPos := StartRel,
-            TargetPos := EndRel,
+            StartPos := Path[CurrentIndex].P1,
+            TargetPos := Path[CurrentIndex].P2,
             MaxSpeed := MaxSpeed,
             Accel := Accel,
             t := t,
@@ -94,18 +85,12 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
         TCPAbs.X := TCPAbs.X + MoveFB.SpeedX * cycle_time;
         TCPAbs.Y := TCPAbs.Y + MoveFB.SpeedY * cycle_time;
         Target := Path[CurrentIndex].P2;
-
     ELSE
-        MidRel.X := Path[CurrentIndex].P2.X - StartOffset.X;
-        MidRel.Y := Path[CurrentIndex].P2.Y - StartOffset.Y;
-        EndRel.X := Path[CurrentIndex].P3.X - StartOffset.X;
-        EndRel.Y := Path[CurrentIndex].P3.Y - StartOffset.Y;
-
         // Handle arc-based motion segments
         ArcFB(
-            P1 := StartRel,
-            P2 := MidRel,
-            P3 := EndRel,
+            P1 := Path[CurrentIndex].P1,
+            P2 := Path[CurrentIndex].P2,
+            P3 := Path[CurrentIndex].P3,
             MaxSpeed := MaxSpeed,
             Accel := Accel,
             t := t,
