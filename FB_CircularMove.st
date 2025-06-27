@@ -39,35 +39,28 @@ VAR
     AngularSpeed : REAL;
     t_dec : REAL;
 
-    D : REAL;
-    Ux, Uy : REAL;
-    Vx, Vy : REAL;
-    Wx, Wy : REAL;
+    (* Variables for circle center calculation *)
+    A, B, C, G : REAL;
 	SELECT: INT;
 END_VAR
 
 // Main calculation block: Move from P1 to P3 through P2 along a circular arc
 
-// Calculate circle center using perpendicular bisectors method
-Ux := 0.5 * (P1.X + P2.X);
-Uy := 0.5 * (P1.Y + P2.Y);
-Vx := 0.5 * (P2.X + P3.X);
-Vy := 0.5 * (P2.Y + P3.Y);
-
-Wx := P2.X - P1.X;
-Wy := P2.Y - P1.Y;
+// Calculate circle center using linear algebra (determinant method)
+A := P1.X * P1.X + P1.Y * P1.Y;
+B := P2.X * P2.X + P2.Y * P2.Y;
+C := P3.X * P3.X + P3.Y * P3.Y;
+G := 2.0 * (P1.X * (P2.Y - P3.Y) + P2.X * (P3.Y - P1.Y) + P3.X * (P1.Y - P2.Y));
 
 // Prevent division by zero and stop motion if the arc is undefined (points are collinear)
-D := 2 * (Wx * (P3.Y - P2.Y) - Wy * (P3.X - P2.X));
-
-IF D = 0 THEN
+IF G = 0 THEN
     SpeedX := 0;
     SpeedY := 0;
     RETURN;
 END_IF;
 
-CenterX := ((P3.Y - P2.Y)*(Ux*Wx + Uy*Wy) - (P3.X - P2.X)*(Vx*Wx + Vy*Wy)) / D;
-CenterY := ((P3.X - P2.X)*(Ux*Wx + Uy*Wy) - (P3.Y - P2.Y)*(Vx*Wx + Vy*Wy)) / -D;
+CenterX := (A * (P2.Y - P3.Y) + B * (P3.Y - P1.Y) + C * (P1.Y - P2.Y)) / G;
+CenterY := (A * (P3.X - P2.X) + B * (P1.X - P3.X) + C * (P2.X - P1.X)) / G;
 
 Radius := SQRT((P1.X - CenterX)*(P1.X - CenterX) + (P1.Y - CenterY)*(P1.Y - CenterY));
 StartAngle := FU_atan2(P1.Y - CenterY, P1.X - CenterX);
