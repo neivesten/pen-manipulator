@@ -122,3 +122,4 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
 END_IF;
 
 // End of PLC_PRG
+END_PROGRAM

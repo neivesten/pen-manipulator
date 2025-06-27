@@ -67,5 +67,6 @@ ELSE
     SpeedY := v * DirY;
 END_IF;
 
-// End of FB_TrapezoidalMove
+// End of FB_LinealMove
+END_FUNCTION_BLOCK
 
