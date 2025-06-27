@@ -6,16 +6,22 @@
 //
 PROGRAM PLC_PRG
 VAR
-    // Visualization and TCP tracking variables
-    TCPPos : Pos2D := (X:=0.0, Y:=0.0); // TCP position in local coordinates
-    VisuPosX : INT := 0;                // Visualization X (upper left origin)
-    VisuPosY : INT := 0;                // Visualization Y (upper left origin)
-    StartOffset : Pos2D := (X:=0.0, Y:=0.0); // Offset of first path point
-    CircleWidth : REAL := 10.0;         // Visual element width for centring
+    // Local TCP position measured from the first path point
+    TCPRel : Pos2D := (X:=0.0, Y:=0.0);
+    // Absolute TCP position used for distance checks
+    TCPAbs : Pos2D := (X:=0.0, Y:=0.0);
+    // Integer coordinates for the visualization
+    VisuPosX : INT := 0;                // X position in pixels
+    VisuPosY : INT := 0;                // Y position in pixels
+    // Absolute position of the first path point
+    StartOffset : Pos2D := (X:=0.0, Y:=0.0);
+    // Diameter of the circle used to draw the TCP
+    CircleWidth : REAL := 10.0;
+    // Flag used to trigger reset on startup
     InitDone : BOOL := FALSE;
 
-    TargetX : REAL := 0.0;
-    TargetY : REAL := 0.0;
+    // Absolute destination of the current segment
+    Target : Pos2D := (X:=0.0, Y:=0.0);
 
     t : REAL := 0.0;         // Time since current segment started
     cycle_time : REAL := 0.1; // Simulation step time
@@ -25,7 +31,6 @@ VAR
 
     MotionActive : BOOL := TRUE;
     Reset : BOOL := FALSE;
-    v : REAL := 0.0;
 
     Path : ARRAY[1..2] OF PathPoint := [
         (P1:=(X:=25.0, Y:=0.0), P2:=(X:=125.0, Y:=150.0), P3:=(X:=125.0, Y:=150.0), IsArc:=FALSE, End:=FALSE),
@@ -46,18 +51,21 @@ IF NOT InitDone THEN
     InitDone := TRUE;
 END_IF;
 
-// Reset position and speed values
+// Reset position and initialise offsets
 IF Reset THEN
-    StartOffset.X := Path[1].P1.X;
-    StartOffset.Y := Path[1].P1.Y;
+    // Record the absolute starting position
+    StartOffset := Path[1].P1;
 
-    TCPPos.X := 0.0;
-    TCPPos.Y := 0.0;
+    // TCP starts at the first path point in absolute coordinates
+    TCPAbs := StartOffset;
+    // No displacement in the local frame at reset
+    TCPRel.X := 0.0;
+    TCPRel.Y := 0.0;
 
-    VisuPosX := TO_INT(TCPPos.X - CircleWidth / 2.0);
-    VisuPosY := TO_INT(TCPPos.Y - CircleWidth / 2.0);
-
-    v := 0; // Reset velocity
+    // Initialise the visualisation values
+    VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
+    VisuPosY := TO_INT(TCPRel.Y - CircleWidth / 2.0);
+    
     Reset := FALSE;
 END_IF
 
@@ -83,10 +91,10 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
         );
 
         // Integrate velocity to update position
-        TCPPos.X := TCPPos.X + MoveFB.SpeedX * cycle_time;
-        TCPPos.Y := TCPPos.Y + MoveFB.SpeedY * cycle_time;
-        TargetX := EndRel.X;
-        TargetY := EndRel.Y;
+        TCPAbs.X := TCPAbs.X + MoveFB.SpeedX * cycle_time;
+        TCPAbs.Y := TCPAbs.Y + MoveFB.SpeedY * cycle_time;
+        Target := Path[CurrentIndex].P2;
+
     ELSE
         MidRel.X := Path[CurrentIndex].P2.X - StartOffset.X;
         MidRel.Y := Path[CurrentIndex].P2.Y - StartOffset.Y;
@@ -105,18 +113,21 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
         );
 
         // Integrate velocity to update position
-        TCPPos.X := TCPPos.X + ArcFB.SpeedX * cycle_time;
-        TCPPos.Y := TCPPos.Y + ArcFB.SpeedY * cycle_time;
-        TargetX := EndRel.X;
-        TargetY := EndRel.Y;
+        TCPAbs.X := TCPAbs.X + ArcFB.SpeedX * cycle_time;
+        TCPAbs.Y := TCPAbs.Y + ArcFB.SpeedY * cycle_time;
+        Target := Path[CurrentIndex].P3;
     END_IF;
 
+    // Update local coordinate from absolute position
+    TCPRel.X := TCPAbs.X - StartOffset.X;
+    TCPRel.Y := TCPAbs.Y - StartOffset.Y;
+
     // Convert precise position to integer for visualization
-    VisuPosX := TO_INT(TCPPos.X - CircleWidth / 2.0);
-    VisuPosY := TO_INT(TCPPos.Y - CircleWidth / 2.0);
+    VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
+    VisuPosY := TO_INT(TCPRel.Y - CircleWidth / 2.0);
 
     // Check if current target is reached and progress to next segment
-    IF ABS(TCPPos.X - TargetX) < 0.5 AND ABS(TCPPos.Y - TargetY) < 0.5 THEN
+    IF ABS(TCPAbs.X - Target.X) < 0.5 AND ABS(TCPAbs.Y - Target.Y) < 0.5 THEN
         t := 0.0;
         CurrentIndex := CurrentIndex + 1;
 
