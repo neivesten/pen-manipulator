@@ -32,14 +32,15 @@ VAR
     MotionActive : BOOL := TRUE;
     Reset : BOOL := FALSE;
 
+
     Path : ARRAY[1..3] OF PathPoint := [
         (P1:=(X:=25.0, Y:=150.0), P2:=(X:=125.0, Y:=150.0), P3:=(X:=125.0, Y:=150.0), IsArc:=FALSE, End:=FALSE),
         (P1:=(X:=125.0, Y:=150.0), P2:=(X:=250.0, Y:=250.0), P3:=(X:=125.0, Y:=350.0), IsArc:=TRUE, End:=TRUE),
-		(P1:=(X:=125.0, Y:=350.0), P2:=(X:=25.0, Y:=150.0), P3:=(X:=25.0, Y:=150.0), IsArc:=FALSE, End:=TRUE)
+		    (P1:=(X:=125.0, Y:=350.0), P2:=(X:=25.0, Y:=150.0), P3:=(X:=25.0, Y:=150.0), IsArc:=FALSE, End:=TRUE)
     ];
     CurrentIndex : INT := 1;
     PathLength : INT := 3;
-    MoveFB : FB_TrapezoidalMove;
+    MoveFB : FB_LinealMove;
     ArcFB : FB_CircularMove;
 END_VAR
 
@@ -79,7 +80,7 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
             MaxSpeed := MaxSpeed,
             Accel := Accel,
             t := t,
-            DecelerateAtEnd := Path[CurrentIndex].End
+            DecelerateAtEnd := Path[CurrentIndex].Break
         );
 
         // Integrate velocity to update position
@@ -95,7 +96,7 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
             MaxSpeed := MaxSpeed,
             Accel := Accel,
             t := t,
-            DecelerateAtEnd := Path[CurrentIndex].End
+            DecelerateAtEnd := Path[CurrentIndex].Break
         );
 
         // Integrate velocity to update position
