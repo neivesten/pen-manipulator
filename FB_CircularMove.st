@@ -39,28 +39,43 @@ VAR
     AngularSpeed : REAL;
     t_dec : REAL;
 
-    (* Variables for circle center calculation *)
-    A, B, C, G : REAL;
-	SELECT: INT;
+    (* Variables for circle center calculation using perpendicular bisectors *)
+    dx12, dy12, dx23, dy23 : REAL;
+    M12X, M12Y, M23X, M23Y : REAL;
+    RHS1, RHS2, D : REAL;
 END_VAR
 
 // Main calculation block: Move from P1 to P3 through P2 along a circular arc
 
-// Calculate circle center using linear algebra (determinant method)
-A := P1.X * P1.X + P1.Y * P1.Y;
-B := P2.X * P2.X + P2.Y * P2.Y;
-C := P3.X * P3.X + P3.Y * P3.Y;
-G := 2.0 * (P1.X * (P2.Y - P3.Y) + P2.X * (P3.Y - P1.Y) + P3.X * (P1.Y - P2.Y));
+// Calculate circle center using perpendicular bisector intersection
+dx12 := P2.X - P1.X;
+dy12 := P2.Y - P1.Y;
+dx23 := P3.X - P2.X;
+dy23 := P3.Y - P2.Y;
 
-// Prevent division by zero and stop motion if the arc is undefined (points are collinear)
-IF G = 0 THEN
-    SpeedX := 0;
-    SpeedY := 0;
+// Mid‑points of the two chords
+M12X := (P1.X + P2.X) * 0.5;
+M12Y := (P1.Y + P2.Y) * 0.5;
+M23X := (P2.X + P3.X) * 0.5;
+M23Y := (P2.Y + P3.Y) * 0.5;
+
+// Determinant for the 2×2 system
+D := dx12 * dy23 - dy12 * dx23;
+
+// Abort if points are collinear (determinant ≈ 0)
+IF ABS(D) < 1e‑6 THEN
+    SpeedX := 0.0;
+    SpeedY := 0.0;
     RETURN;
 END_IF;
 
-CenterX := (A * (P2.Y - P3.Y) + B * (P3.Y - P1.Y) + C * (P1.Y - P2.Y)) / G;
-CenterY := (A * (P3.X - P2.X) + B * (P1.X - P3.X) + C * (P2.X - P1.X)) / G;
+// Right‑hand sides of the linear equations
+RHS1 := dx12 * M12X + dy12 * M12Y;
+RHS2 := dx23 * M23X + dy23 * M23Y;
+
+// Intersection of the two perpendicular bisectors → circle centre
+CenterX := (RHS1 * dy23 - dy12 * RHS2) / D;
+CenterY := (dx12 * RHS2 - RHS1 * dx23) / D;
 
 Radius := SQRT((P1.X - CenterX)*(P1.X - CenterX) + (P1.Y - CenterY)*(P1.Y - CenterY));
 StartAngle := FU_atan2(P1.Y - CenterY, P1.X - CenterX);
@@ -131,5 +146,4 @@ Angle := StartAngle + Dir * (s_t / Radius);
 AngularSpeed := v / Radius;
 SpeedX := -SIN(Angle) * AngularSpeed * Radius;
 SpeedY := COS(Angle) * AngularSpeed * Radius;
-
 // End of FB_CircularMove
