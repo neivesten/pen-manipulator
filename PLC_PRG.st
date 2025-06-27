@@ -1,9 +1,3 @@
-//
-// Main program that iterates through an array of PathPoint records and
-// feeds the motion function blocks.  The current position is integrated
-// from the velocity outputs of the blocks to provide a simple simulation
-// of the manipulator motion.
-//
 PROGRAM PLC_PRG
 VAR
     // Local TCP position measured from the first path point
@@ -24,19 +18,18 @@ VAR
     Target : Pos2D := (X:=0.0, Y:=0.0);
 
     t : REAL := 0.0;         // Time since current segment started
-    cycle_time : REAL := 0.1; // Simulation step time
+    cycle_time : REAL := 0.01; // Simulation step time
 
-    MaxSpeed : REAL := 50.0;
-    Accel : REAL := 10.0;
+    MaxSpeed : REAL := 25.0;
+    Accel : REAL := 15.0;
 
     MotionActive : BOOL := TRUE;
     Reset : BOOL := FALSE;
 
-
     Path : ARRAY[1..3] OF PathPoint := [
-        (P1:=(X:=25.0, Y:=150.0), P2:=(X:=125.0, Y:=150.0), P3:=(X:=125.0, Y:=150.0), IsArc:=FALSE, End:=FALSE),
-        (P1:=(X:=125.0, Y:=150.0), P2:=(X:=250.0, Y:=250.0), P3:=(X:=125.0, Y:=350.0), IsArc:=TRUE, End:=TRUE),
-		    (P1:=(X:=125.0, Y:=350.0), P2:=(X:=25.0, Y:=150.0), P3:=(X:=25.0, Y:=150.0), IsArc:=FALSE, End:=TRUE)
+        (P1:=(X:=25.0, Y:=150.0), P2:=(X:=125.0, Y:=150.0), P3:=(X:=125.0, Y:=150.0), IsArc:=FALSE, Break:=FALSE),
+        (P1:=(X:=125.0, Y:=150.0), P2:=(X:=250.0, Y:=250.0), P3:=(X:=125.0, Y:=350.0), IsArc:=TRUE, Break:=TRUE),
+		(P1:=(X:=125.0, Y:=350.0), P2:=(X:=25.0, Y:=150.0), P3:=(X:=25.0, Y:=150.0), IsArc:=FALSE, Break:=TRUE)
     ];
     CurrentIndex : INT := 1;
     PathLength : INT := 3;
@@ -64,6 +57,14 @@ IF Reset THEN
     // Initialise the visualisation values
     VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
     VisuPosY := TO_INT(TCPRel.Y - CircleWidth / 2.0);
+
+    // Restart path from the beginning
+    CurrentIndex := 1;
+    t := 0.0;
+    MoveFB.SpeedX := 0.0;
+    MoveFB.SpeedY := 0.0;
+    ArcFB.SpeedX := 0.0;
+    ArcFB.SpeedY := 0.0;
 
     Reset := FALSE;
 END_IF
