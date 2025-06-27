@@ -27,17 +27,18 @@ VAR
     cycle_time : REAL := 0.1; // Simulation step time
 
     MaxSpeed : REAL := 50.0;
-    Accel : REAL := 100.0;
+    Accel : REAL := 10.0;
 
     MotionActive : BOOL := TRUE;
     Reset : BOOL := FALSE;
 
-    Path : ARRAY[1..2] OF PathPoint := [
+    Path : ARRAY[1..3] OF PathPoint := [
         (P1:=(X:=25.0, Y:=150.0), P2:=(X:=125.0, Y:=150.0), P3:=(X:=125.0, Y:=150.0), IsArc:=FALSE, End:=FALSE),
-        (P1:=(X:=125.0, Y:=150.0), P2:=(X:=250.0, Y:=250.0), P3:=(X:=125.0, Y:=350.0), IsArc:=TRUE, End:=TRUE)
+        (P1:=(X:=125.0, Y:=150.0), P2:=(X:=250.0, Y:=250.0), P3:=(X:=125.0, Y:=350.0), IsArc:=TRUE, End:=TRUE),
+		(P1:=(X:=125.0, Y:=350.0), P2:=(X:=25.0, Y:=150.0), P3:=(X:=25.0, Y:=150.0), IsArc:=FALSE, End:=TRUE)
     ];
     CurrentIndex : INT := 1;
-    PathLength : INT := 2;
+    PathLength : INT := 3;
     MoveFB : FB_TrapezoidalMove;
     ArcFB : FB_CircularMove;
 END_VAR
@@ -112,13 +113,9 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
     VisuPosY := TO_INT(TCPRel.Y - CircleWidth / 2.0);
 
     // Check if current target is reached and progress to next segment
-    IF ABS(TCPAbs.X - Target.X) < 0.5 AND ABS(TCPAbs.Y - Target.Y) < 0.5 THEN
+    IF ABS(TCPAbs.X - Target.X) < 1 AND ABS(TCPAbs.Y - Target.Y) < 1 THEN
         t := 0.0;
         CurrentIndex := CurrentIndex + 1;
-
-        IF Path[CurrentIndex - 1].End THEN
-            MotionActive := FALSE;
-        END_IF;
     END_IF;
 END_IF;
 
