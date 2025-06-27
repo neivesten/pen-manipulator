@@ -35,11 +35,11 @@ VAR
     s_t : REAL;
     v : REAL;
     Angle : REAL;
-	angleP2 : REAL;
+    angleP2 : REAL;
     AngularSpeed : REAL;
     t_dec : REAL;
 
-    (* Variables for circle center calculation using perpendicular bisectors *)
+    // Variables for circle center calculation using perpendicular bisectors
     dx12, dy12, dx23, dy23 : REAL;
     M12X, M12Y, M23X, M23Y : REAL;
     RHS1, RHS2, D : REAL;

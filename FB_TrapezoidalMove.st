@@ -17,7 +17,7 @@ VAR_INPUT
     MaxSpeed : REAL;    // Maximum speed during movement
     Accel : REAL;       // Acceleration used for ramp-up and ramp-down
     t : REAL;           // Elapsed time since start of movement
-    DecelerateAtEnd : BOOL;
+    DecelerateAtEnd : BOOL; // Whether to ramp down at the end
 END_VAR
 VAR_OUTPUT
     SpeedX : REAL;      // Current speed in the X direction
@@ -61,7 +61,7 @@ ELSE
     // Determine current speed magnitude
     IF t < t_acc THEN
         v := Accel * t;
-    ELSIF t < t_acc + t_const THEN
+    ELSIF t < t_acc + t_const OR NOT DecelerateAtEnd THEN
         v := MaxSpeed;
     ELSIF t < t_total THEN
         v := MaxSpeed - Accel * (t - t_acc - t_const);
