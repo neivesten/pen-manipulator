@@ -28,8 +28,8 @@ VAR
     v : REAL := 0.0;
 
     Path : ARRAY[1..2] OF PathPoint := [
-        (P1:=(X:=0.0, Y:=0.0), P2:=(X:=100.0, Y:=0.0), P3:=(X:=100.0, Y:=0.0), IsArc:=FALSE, End:=FALSE),
-        (P1:=(X:=100.0, Y:=0.0), P2:=(X:=150.0, Y:=50.0), P3:=(X:=100.0, Y:=100.0), IsArc:=TRUE, End:=TRUE)
+        (P1:=(X:=25.0, Y:=0.0), P2:=(X:=125.0, Y:=150.0), P3:=(X:=125.0, Y:=150.0), IsArc:=FALSE, End:=FALSE),
+        (P1:=(X:=125.0, Y:=150.0), P2:=(X:=250.0, Y:=250.0), P3:=(X:=125.0, Y:=350.0), IsArc:=TRUE, End:=TRUE)
     ];
     CurrentIndex : INT := 1;
     PathLength : INT := 2;
