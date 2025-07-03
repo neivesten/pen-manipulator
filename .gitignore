@@ -1,1 +1,10 @@
 roboter.code-workspace
+
+# Ignore generated simulation and device config files
+*.opt
+pen_manipulator.Device.*
+pen_manipulator.Sync.json
+*.precompilecache
+*.~u
+*sync.json
+*.DS_Store
