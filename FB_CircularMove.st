@@ -14,9 +14,9 @@ VAR_INPUT
     t : REAL;               // Time since start of movement [s]
     DecelerateAtEnd : BOOL; // Whether to decelerate at the end of movement
 END_VAR
-VAR_OUTPUT
-    SpeedX : REAL;          // Current velocity in X direction
-    SpeedY : REAL;          // Current velocity in Y direction
+VAR_IN_OUT
+    SpeedX : REAL;          // Current velocity in X direction (initial value on first call)
+    SpeedY : REAL;          // Current velocity in Y direction (initial value on first call)
 END_VAR
 VAR
     CenterX, CenterY : REAL;
@@ -34,6 +34,7 @@ VAR
     t_total : REAL;
     s_t : REAL;
     v : REAL;
+    v0 : REAL;
     Angle : REAL;
     angleP2 : REAL;
     AngularSpeed : REAL;
@@ -93,10 +94,13 @@ END_IF;
 
 // Set direction multiplier: -1 for clockwise, +1 for counterclockwise
 IF CW = TRUE THEN
-	Dir := -1.0;
+        Dir := -1.0;
 ELSE
-	Dir := 1.0;
+        Dir := 1.0;
 END_IF
+
+    // Magnitude of initial velocity provided via SpeedX/SpeedY
+    v0 := SQRT(SpeedX * SpeedX + SpeedY * SpeedY);
 
 // Adjust DeltaAngle for proper arc direction considering CW/CCW
 DeltaAngle := EndAngle - StartAngle;
@@ -107,23 +111,30 @@ ELSIF DeltaAngle > 0 AND CW THEN
 END_IF;
 DeltaAngle := ABS(DeltaAngle);
 ArcLength := Radius * DeltaAngle;
-t_acc := MaxSpeed / Accel;
-s_acc := 0.5 * Accel * t_acc * t_acc;
-s_const := ArcLength - 2 * s_acc;
+t_acc := (MaxSpeed - v0) / Accel;
+IF t_acc < 0 THEN
+    t_acc := 0.0;
+END_IF;
+s_acc := v0 * t_acc + 0.5 * Accel * t_acc * t_acc;
+t_dec := MaxSpeed / Accel;
+s_const := ArcLength - s_acc - (0.5 * MaxSpeed * t_dec);
 
 IF s_const < 0 THEN
-    t_acc := SQRT(ArcLength / Accel);
+    // Triangular profile starting from v0
+    v := SQRT(v0 * v0 + 2 * Accel * ArcLength);
+    t_acc := (v - v0) / Accel;
+    t_dec := v / Accel;
     t_const := 0.0;
-    t_total := 2 * t_acc;
+    t_total := t_acc + t_dec;
 ELSE
     t_const := s_const / MaxSpeed;
-    t_total := 2 * t_acc + t_const;
+    t_total := t_acc + t_const + t_dec;
 END_IF;
 
 // Acceleration phase
 IF t < t_acc THEN
-    v := Accel * t;
-    s_t := 0.5 * Accel * t * t;
+    v := v0 + Accel * t;
+    s_t := v0 * t + 0.5 * Accel * t * t;
 
 // Constant speed phase or skipping deceleration
 ELSIF t < t_acc + t_const OR NOT DecelerateAtEnd THEN
