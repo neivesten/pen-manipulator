@@ -9,3 +9,12 @@ trapezoidal and circular motion profiles.
 The project can be imported into a ctrlX PLC Engineering workspace.  It
 is mainly intended as a learning resource, so the motion logic is kept
 minimal and easy to read.
+
+## Accessing and Initialising Speed
+
+`FB_TrapezoidalMove` and `FB_CircularMove` allow their `SpeedX` and
+`SpeedY` values to be passed in as `VAR_IN_OUT` parameters.  These inputs
+provide the initial velocity of a new motion segment and are updated on
+every call.  You can reset these variables to zero when restarting the
+simulation or feed them from the previous segment to achieve continuous
+motion.
