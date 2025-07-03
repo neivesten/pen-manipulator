@@ -36,11 +36,11 @@ VAR
     v : REAL;
     v0 : REAL;
     Angle : REAL;
-	angleP2 : REAL;
+    angleP2 : REAL;
     AngularSpeed : REAL;
     t_dec : REAL;
 
-    (* Variables for circle center calculation using perpendicular bisectors *)
+    // Variables for circle center calculation using perpendicular bisectors
     dx12, dy12, dx23, dy23 : REAL;
     M12X, M12Y, M23X, M23Y : REAL;
     RHS1, RHS2, D : REAL;
@@ -64,7 +64,7 @@ M23Y := (P2.Y + P3.Y) * 0.5;
 D := dx12 * dy23 - dy12 * dx23;
 
 // Abort if points are collinear (determinant ≈ 0)
-IF ABS(D) < 1e‑6 THEN
+IF ABS(D) < 0.0001 THEN
     SpeedX := 0.0;
     SpeedY := 0.0;
     RETURN;
