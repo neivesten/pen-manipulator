@@ -82,7 +82,7 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
             MaxSpeed := MaxSpeed,
             Accel := Accel,
             t := t,
-            DecelerateAtEnd := Path[CurrentIndex].Break
+            DecelerateAtEnd := Path[CurrentIndex].Break,
             SpeedX := CurSpeedX,
             SpeedY := CurSpeedY
         );
