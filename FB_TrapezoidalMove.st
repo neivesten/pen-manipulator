@@ -19,9 +19,9 @@ VAR_INPUT
     t : REAL;           // Elapsed time since start of movement
     DecelerateAtEnd : BOOL;
 END_VAR
-VAR_OUTPUT
-    SpeedX : REAL;      // Current speed in the X direction
-    SpeedY : REAL;      // Current speed in the Y direction
+VAR_IN_OUT
+    SpeedX : REAL;      // Current speed in the X direction (initial value on first call)
+    SpeedY : REAL;      // Current speed in the Y direction (initial value on first call)
 END_VAR
 VAR
     TotalDist : REAL;   // Total distance between start and target
@@ -33,6 +33,8 @@ VAR
     t_const : REAL;     // Time spent at constant MaxSpeed
     t_total : REAL;     // Total duration of the entire move
     v : REAL;           // Current magnitude of the velocity vector
+    v0 : REAL;          // Initial velocity magnitude
+    t_dec : REAL;       // Time needed to decelerate to 0
 END_VAR
 
 // Compute direction and total distance
@@ -44,23 +46,33 @@ ELSE
     DirX := (TargetPos.X - StartPos.X) / TotalDist;
     DirY := (TargetPos.Y - StartPos.Y) / TotalDist;
 
-    t_acc := MaxSpeed / Accel;
-    s_acc := 0.5 * Accel * t_acc * t_acc;
-    s_const := TotalDist - 2 * s_acc;
+    // Determine initial speed magnitude from provided inputs
+    v0 := SQRT(SpeedX * SpeedX + SpeedY * SpeedY);
+
+    t_acc := (MaxSpeed - v0) / Accel;
+    IF t_acc < 0 THEN
+        t_acc := 0;
+    END_IF;
+    s_acc := v0 * t_acc + 0.5 * Accel * t_acc * t_acc;
+    t_dec := MaxSpeed / Accel;
+    s_const := TotalDist - s_acc - (0.5 * MaxSpeed * t_dec);
+
     IF s_const < 0 THEN
-        // Triangular profile
-        t_acc := SQRT(TotalDist / Accel);
+        // Triangular profile starting from v0
+        v := SQRT(v0 * v0 + 2 * Accel * TotalDist);
+        t_acc := (v - v0) / Accel;
+        t_dec := v / Accel;
         t_const := 0;
-        t_total := 2 * t_acc;
+        t_total := t_acc + t_dec;
     ELSE
         // Trapezoidal profile
         t_const := s_const / MaxSpeed;
-        t_total := 2 * t_acc + t_const;
+        t_total := t_acc + t_const + t_dec;
     END_IF;
 
     // Determine current speed magnitude
     IF t < t_acc THEN
-        v := Accel * t;
+        v := v0 + Accel * t;
     ELSIF t < t_acc + t_const THEN
         v := MaxSpeed;
     ELSIF t < t_total THEN
