@@ -29,6 +29,10 @@ VAR
     MaxSpeed : REAL := 50.0;
     Accel : REAL := 10.0;
 
+    // Current velocity components used by the motion function blocks
+    CurSpeedX : REAL := 0.0;
+    CurSpeedY : REAL := 0.0;
+
     MotionActive : BOOL := TRUE;
     Reset : BOOL := FALSE;
 
@@ -64,6 +68,10 @@ IF Reset THEN
     VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
     VisuPosY := TO_INT(TCPRel.Y - CircleWidth / 2.0);
 
+    // Reset velocity
+    CurSpeedX := 0.0;
+    CurSpeedY := 0.0;
+
     Reset := FALSE;
 END_IF
 
@@ -79,12 +87,14 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
             MaxSpeed := MaxSpeed,
             Accel := Accel,
             t := t,
-            DecelerateAtEnd := Path[CurrentIndex].End
+            DecelerateAtEnd := Path[CurrentIndex].End,
+            SpeedX := CurSpeedX,
+            SpeedY := CurSpeedY
         );
 
         // Integrate velocity to update position
-        TCPAbs.X := TCPAbs.X + MoveFB.SpeedX * cycle_time;
-        TCPAbs.Y := TCPAbs.Y + MoveFB.SpeedY * cycle_time;
+        TCPAbs.X := TCPAbs.X + CurSpeedX * cycle_time;
+        TCPAbs.Y := TCPAbs.Y + CurSpeedY * cycle_time;
         Target := Path[CurrentIndex].P2;
     ELSE
         // Handle arc-based motion segments
@@ -95,12 +105,14 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
             MaxSpeed := MaxSpeed,
             Accel := Accel,
             t := t,
-            DecelerateAtEnd := Path[CurrentIndex].End
+            DecelerateAtEnd := Path[CurrentIndex].End,
+            SpeedX := CurSpeedX,
+            SpeedY := CurSpeedY
         );
 
         // Integrate velocity to update position
-        TCPAbs.X := TCPAbs.X + ArcFB.SpeedX * cycle_time;
-        TCPAbs.Y := TCPAbs.Y + ArcFB.SpeedY * cycle_time;
+        TCPAbs.X := TCPAbs.X + CurSpeedX * cycle_time;
+        TCPAbs.Y := TCPAbs.Y + CurSpeedY * cycle_time;
         Target := Path[CurrentIndex].P3;
     END_IF;
 
