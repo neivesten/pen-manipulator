@@ -38,6 +38,12 @@ VAR
     PathLength : INT := 3;
     MoveFB : FB_LinealMove;
     ArcFB : FB_CircularMove;
+    // Utility block to translate positions into the canvas frame
+    OffsetFB : FB_CanvasOffset;
+    // Temporary storage for path points in canvas coordinates
+    CanvasP1 : Pos2D;
+    CanvasP2 : Pos2D;
+    CanvasP3 : Pos2D;
 END_VAR
 
 // Automatic reset on first cycle
@@ -74,11 +80,19 @@ END_IF
 IF MotionActive AND CurrentIndex <= PathLength THEN
     t := t + cycle_time;
 
+    // Translate current segment points into canvas coordinates
+    OffsetFB(Source := Path[CurrentIndex].P1, Offset := StartOffset);
+    CanvasP1 := OffsetFB.Canvas;
+    OffsetFB(Source := Path[CurrentIndex].P2, Offset := StartOffset);
+    CanvasP2 := OffsetFB.Canvas;
+    OffsetFB(Source := Path[CurrentIndex].P3, Offset := StartOffset);
+    CanvasP3 := OffsetFB.Canvas;
+
     IF NOT Path[CurrentIndex].IsArc THEN
         // Handle linear motion segments
         MoveFB(
-            StartPos := Path[CurrentIndex].P1,
-            TargetPos := Path[CurrentIndex].P2,
+            StartPos := CanvasP1,
+            TargetPos := CanvasP2,
             MaxSpeed := MaxSpeed,
             Accel := Accel,
             t := t,
@@ -94,13 +108,13 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
     ELSE
         // Handle arc-based motion segments
         ArcFB(
-            P1 := Path[CurrentIndex].P1,
-            P2 := Path[CurrentIndex].P2,
-            P3 := Path[CurrentIndex].P3,
+            P1 := CanvasP1,
+            P2 := CanvasP2,
+            P3 := CanvasP3,
             MaxSpeed := MaxSpeed,
             Accel := Accel,
             t := t,
-            DecelerateAtEnd := Path[CurrentIndex].Break
+            DecelerateAtEnd := Path[CurrentIndex].Break,
             SpeedX := CurSpeedX,
             SpeedY := CurSpeedY
         );
@@ -111,9 +125,9 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
         Target := Path[CurrentIndex].P3;
     END_IF;
 
-    // Update local coordinate from absolute position
-    TCPRel.X := TCPAbs.X - StartOffset.X;
-    TCPRel.Y := TCPAbs.Y - StartOffset.Y;
+    // Update local coordinate from absolute position using FB_CanvasOffset
+    OffsetFB(Source := TCPAbs, Offset := StartOffset);
+    TCPRel := OffsetFB.Canvas;
 
     // Convert precise position to integer for visualization
     VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
