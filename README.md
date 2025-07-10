@@ -21,7 +21,7 @@ motion.
 
 ## Canvas Coordinate Translation
 
-`FB_CanvasOffset` shifts a position from the visualisation coordinate frame
+`FU_CanvasOffset` shifts a position from the visualisation coordinate frame
 into a local canvas coordinate system.  Pass the input position from the
-visu and the offset of your canvas origin to obtain the translated 
+visu and the offset of your canvas origin to obtain the translated
 coordinates.
