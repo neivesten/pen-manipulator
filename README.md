@@ -23,7 +23,5 @@ motion.
 
 `FB_CanvasOffset` shifts a position from the visualisation coordinate frame
 into a local canvas coordinate system.  Pass the input position from the
-visu and the offset of your canvas origin to obtain the translated
-coordinates.  `PLC_PRG` uses this block to convert the path points and
-the current tool centre point so that motion starts at `(0,0)` on the
-canvas.
+visu and the offset of your canvas origin to obtain the translated 
+coordinates.
