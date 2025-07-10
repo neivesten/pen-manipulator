@@ -40,6 +40,10 @@ VAR
     AngularSpeed : REAL;
     t_dec : REAL;
 
+    // Flags for special cases
+    fullCircle : BOOL;
+    cross : REAL;
+
     // Variables for circle center calculation using perpendicular bisectors
     dx12, dy12, dx23, dy23 : REAL;
     M12X, M12Y, M23X, M23Y : REAL;
@@ -84,12 +88,25 @@ EndAngle := FU_atan2(P3.Y - CenterY, P3.X - CenterX);
 
 angleP2 := FU_atan2(P2.Y - CenterY, P2.X - CenterX);
 
-// Determine clockwise or counterclockwise direction based on arc passing through P2
-IF ((StartAngle < EndAngle) AND (angleP2 > StartAngle) AND (angleP2 < EndAngle)) OR
-   ((StartAngle > EndAngle) AND NOT (angleP2 > EndAngle AND angleP2 < StartAngle)) THEN
-    CW := FALSE;
+// Detect a full circle when start and end points coincide
+fullCircle := ABS(P1.X - P3.X) < 0.0001 AND ABS(P1.Y - P3.Y) < 0.0001;
+
+IF fullCircle THEN
+    // Orientation based on cross product of radius vectors
+    cross := (P1.X - CenterX) * (P2.Y - CenterY) - (P1.Y - CenterY) * (P2.X - CenterX);
+    IF cross < 0 THEN
+        CW := TRUE;
+    ELSE
+        CW := FALSE;
+    END_IF;
 ELSE
-    CW := TRUE;
+    // Determine clockwise or counterclockwise direction based on arc passing through P2
+    IF ((StartAngle < EndAngle) AND (angleP2 > StartAngle) AND (angleP2 < EndAngle)) OR
+       ((StartAngle > EndAngle) AND NOT (angleP2 > EndAngle AND angleP2 < StartAngle)) THEN
+        CW := FALSE;
+    ELSE
+        CW := TRUE;
+    END_IF;
 END_IF;
 
 // Set direction multiplier: -1 for clockwise, +1 for counterclockwise
@@ -103,13 +120,17 @@ END_IF
     v0 := SQRT(SpeedX * SpeedX + SpeedY * SpeedY);
 
 // Adjust DeltaAngle for proper arc direction considering CW/CCW
-DeltaAngle := EndAngle - StartAngle;
-IF DeltaAngle < 0 AND NOT CW THEN
-    DeltaAngle := DeltaAngle + 2 * 3.1415926;
-ELSIF DeltaAngle > 0 AND CW THEN
-    DeltaAngle := DeltaAngle - 2 * 3.1415926;
+IF fullCircle THEN
+    DeltaAngle := 2 * 3.1415926;
+ELSE
+    DeltaAngle := EndAngle - StartAngle;
+    IF DeltaAngle < 0 AND NOT CW THEN
+        DeltaAngle := DeltaAngle + 2 * 3.1415926;
+    ELSIF DeltaAngle > 0 AND CW THEN
+        DeltaAngle := DeltaAngle - 2 * 3.1415926;
+    END_IF;
+    DeltaAngle := ABS(DeltaAngle);
 END_IF;
-DeltaAngle := ABS(DeltaAngle);
 ArcLength := Radius * DeltaAngle;
 t_acc := (MaxSpeed - v0) / Accel;
 IF t_acc < 0 THEN
