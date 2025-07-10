@@ -52,44 +52,50 @@ END_VAR
 
 // Main calculation block: Move from P1 to P3 through P2 along a circular arc
 
-// Calculate circle center using perpendicular bisector intersection
-dx12 := P2.X - P1.X;
-dy12 := P2.Y - P1.Y;
-dx23 := P3.X - P2.X;
-dy23 := P3.Y - P2.Y;
+// Calculate circle centre
+// Special case: draw a full circle when start and end points coincide
+fullCircle := ABS(P1.X - P3.X) < 0.0001 AND ABS(P1.Y - P3.Y) < 0.0001;
+IF fullCircle THEN
+    // Use midpoint between P1 and P2 as the circle centre
+    CenterX := (P1.X + P2.X) * 0.5;
+    CenterY := (P1.Y + P2.Y) * 0.5;
+ELSE
+    // General case using perpendicular bisectors of two chords
+    dx12 := P2.X - P1.X;
+    dy12 := P2.Y - P1.Y;
+    dx23 := P3.X - P2.X;
+    dy23 := P3.Y - P2.Y;
 
-// Mid‑points of the two chords
-M12X := (P1.X + P2.X) * 0.5;
-M12Y := (P1.Y + P2.Y) * 0.5;
-M23X := (P2.X + P3.X) * 0.5;
-M23Y := (P2.Y + P3.Y) * 0.5;
+    // Mid‑points of the two chords
+    M12X := (P1.X + P2.X) * 0.5;
+    M12Y := (P1.Y + P2.Y) * 0.5;
+    M23X := (P2.X + P3.X) * 0.5;
+    M23Y := (P2.Y + P3.Y) * 0.5;
 
-// Determinant for the 2×2 system
-D := dx12 * dy23 - dy12 * dx23;
+    // Determinant for the 2×2 system
+    D := dx12 * dy23 - dy12 * dx23;
 
-// Abort if points are collinear (determinant ≈ 0)
-IF ABS(D) < 0.0001 THEN
-    SpeedX := 0.0;
-    SpeedY := 0.0;
-    RETURN;
+    // Abort if points are collinear (determinant ≈ 0)
+    IF ABS(D) < 0.0001 THEN
+        SpeedX := 0.0;
+        SpeedY := 0.0;
+        RETURN;
+    END_IF;
+
+    // Right‑hand sides of the linear equations
+    RHS1 := dx12 * M12X + dy12 * M12Y;
+    RHS2 := dx23 * M23X + dy23 * M23Y;
+
+    // Intersection of the two perpendicular bisectors → circle centre
+    CenterX := (RHS1 * dy23 - dy12 * RHS2) / D;
+    CenterY := (dx12 * RHS2 - RHS1 * dx23) / D;
 END_IF;
-
-// Right‑hand sides of the linear equations
-RHS1 := dx12 * M12X + dy12 * M12Y;
-RHS2 := dx23 * M23X + dy23 * M23Y;
-
-// Intersection of the two perpendicular bisectors → circle centre
-CenterX := (RHS1 * dy23 - dy12 * RHS2) / D;
-CenterY := (dx12 * RHS2 - RHS1 * dx23) / D;
 
 Radius := SQRT((P1.X - CenterX)*(P1.X - CenterX) + (P1.Y - CenterY)*(P1.Y - CenterY));
 StartAngle := FU_atan2(P1.Y - CenterY, P1.X - CenterX);
 EndAngle := FU_atan2(P3.Y - CenterY, P3.X - CenterX);
 
 angleP2 := FU_atan2(P2.Y - CenterY, P2.X - CenterX);
-
-// Detect a full circle when start and end points coincide
-fullCircle := ABS(P1.X - P3.X) < 0.0001 AND ABS(P1.Y - P3.Y) < 0.0001;
 
 IF fullCircle THEN
     // Orientation based on cross product of radius vectors
