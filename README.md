@@ -18,3 +18,9 @@ provide the initial velocity of a new motion segment and are updated on
 every call.  You can reset these variables to zero when restarting the
 simulation or feed them from the previous segment to achieve continuous
 motion.
+
+## Drawing Full Circles
+
+`FB_CircularMove` supports drawing a complete circle by specifying the same
+coordinates for the start (`P1`) and end (`P3`) points.  The midpoint `P2`
+still determines the plane of the circle and its direction of travel.
