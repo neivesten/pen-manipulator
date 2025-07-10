@@ -38,12 +38,16 @@ VAR
     PathLength : INT := 3;
     MoveFB : FB_LinealMove;
     ArcFB : FB_CircularMove;
-    // Utility block to translate positions into the canvas frame
-    OffsetFB : FB_CanvasOffset;
+    // Pre-computed path expressed in canvas coordinates
+    CanvasPath : ARRAY[1..3] OF PathPoint;
     // Temporary storage for path points in canvas coordinates
     CanvasP1 : Pos2D;
     CanvasP2 : Pos2D;
     CanvasP3 : Pos2D;
+    // Flag used when returning to the origin
+    ReturnHome : BOOL := FALSE;
+    ReturnStart : Pos2D;
+    i : INT;
 END_VAR
 
 // Automatic reset on first cycle
@@ -71,22 +75,29 @@ IF Reset THEN
     CurSpeedY := 0.0;
     CurrentIndex := 1;
     t := 0.0;
+    ReturnHome := FALSE;
+
+    // Pre-compute path points in canvas coordinates
+    FOR i := 1 TO PathLength DO
+        CanvasPath[i].P1 := FU_CanvasOffset(Path[i].P1, StartOffset);
+        CanvasPath[i].P2 := FU_CanvasOffset(Path[i].P2, StartOffset);
+        CanvasPath[i].P3 := FU_CanvasOffset(Path[i].P3, StartOffset);
+        CanvasPath[i].IsArc := Path[i].IsArc;
+        CanvasPath[i].Break := Path[i].Break;
+    END_FOR;
     Reset := FALSE;
 
     
 END_IF
 
 // Control movement execution
-IF MotionActive AND CurrentIndex <= PathLength THEN
+IF MotionActive AND NOT ReturnHome AND CurrentIndex <= PathLength THEN
     t := t + cycle_time;
 
-    // Translate current segment points into canvas coordinates
-    OffsetFB(Source := Path[CurrentIndex].P1, Offset := StartOffset);
-    CanvasP1 := OffsetFB.Canvas;
-    OffsetFB(Source := Path[CurrentIndex].P2, Offset := StartOffset);
-    CanvasP2 := OffsetFB.Canvas;
-    OffsetFB(Source := Path[CurrentIndex].P3, Offset := StartOffset);
-    CanvasP3 := OffsetFB.Canvas;
+    // Fetch pre-translated path points in canvas coordinates
+    CanvasP1 := CanvasPath[CurrentIndex].P1;
+    CanvasP2 := CanvasPath[CurrentIndex].P2;
+    CanvasP3 := CanvasPath[CurrentIndex].P3;
 
     IF NOT Path[CurrentIndex].IsArc THEN
         // Handle linear motion segments
@@ -125,9 +136,8 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
         Target := Path[CurrentIndex].P3;
     END_IF;
 
-    // Update local coordinate from absolute position using FB_CanvasOffset
-    OffsetFB(Source := TCPAbs, Offset := StartOffset);
-    TCPRel := OffsetFB.Canvas;
+    // Update local coordinate from absolute position
+    TCPRel := FU_CanvasOffset(TCPAbs, StartOffset);
 
     // Convert precise position to integer for visualization
     VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
@@ -137,6 +147,37 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
     IF ABS(TCPAbs.X - Target.X) < 1 AND ABS(TCPAbs.Y - Target.Y) < 1 THEN
         t := 0.0;
         CurrentIndex := CurrentIndex + 1;
+        IF CurrentIndex > PathLength THEN
+            // Begin return to origin on completion
+            ReturnHome := TRUE;
+            ReturnStart := TCPRel;
+            t := 0.0;
+        END_IF;
+    END_IF;
+ELSIF MotionActive AND ReturnHome THEN
+    t := t + cycle_time;
+    MoveFB(
+        StartPos := ReturnStart,
+        TargetPos := (X:=0.0, Y:=0.0),
+        MaxSpeed := MaxSpeed,
+        Accel := Accel,
+        t := t,
+        DecelerateAtEnd := TRUE,
+        SpeedX := CurSpeedX,
+        SpeedY := CurSpeedY
+    );
+
+    TCPAbs.X := TCPAbs.X + CurSpeedX * cycle_time;
+    TCPAbs.Y := TCPAbs.Y + CurSpeedY * cycle_time;
+
+    TCPRel := FU_CanvasOffset(TCPAbs, StartOffset);
+
+    VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
+    VisuPosY := TO_INT(TCPRel.Y - CircleWidth / 2.0);
+
+    IF ABS(TCPRel.X) < 1 AND ABS(TCPRel.Y) < 1 THEN
+        MotionActive := FALSE;
+        ReturnHome := FALSE;
     END_IF;
 END_IF;
 
