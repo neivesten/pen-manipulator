@@ -30,9 +30,9 @@ VAR
     Reset : BOOL := FALSE;
 
     Path : ARRAY[1..3] OF PathPoint := [
-        (P1:=(X:=25.0, Y:=150.0), P2:=(X:=125.0, Y:=150.0), P3:=(X:=125.0, Y:=150.0), IsArc:=FALSE, Break:=FALSE),
-        (P1:=(X:=125.0, Y:=150.0), P2:=(X:=250.0, Y:=250.0), P3:=(X:=125.0, Y:=350.0), IsArc:=TRUE, Break:=TRUE),
-		(P1:=(X:=125.0, Y:=350.0), P2:=(X:=25.0, Y:=150.0), P3:=(X:=25.0, Y:=150.0), IsArc:=FALSE, Break:=TRUE)
+        (P1:=(X:=139.0, Y:=82.0), P2:=(X:=239.0, Y:=82.0), P3:=(X:=239.0, Y:=82.0), IsArc:=FALSE, Break:=FALSE),
+        (P1:=(X:=239.0, Y:=82.0), P2:=(X:=364.0, Y:=182.0), P3:=(X:=239.0, Y:=282.0), IsArc:=TRUE, Break:=TRUE),
+		(P1:=(X:=239.0, Y:=282.0), P2:=(X:=139.0, Y:=82.0), P3:=(X:=139.0, Y:=82.0), IsArc:=FALSE, Break:=TRUE)
     ];
     CurrentIndex : INT := 0;
     PathLength : INT := 3;
@@ -63,7 +63,8 @@ IF Reset THEN
 
     // TCP starts at the first path point in absolute coordinates
     TCPAbs := StartOffset;
-    HomePos := TCPAbs; // Store home position for return
+    HomePos.X := 0;  // Store home position for return
+	HomePos.Y := 0;
     // No displacement in the local frame at reset
     TCPRel.X := 0.0;
     TCPRel.Y := 0.0;
@@ -88,9 +89,9 @@ IF MotionActive THEN
         t := t + cycle_time;
         
         // Convert path points to canvas coordinates
-        CanvasP2 := FU_CanvasOffset(Path[1].P2, CanvPos);
+        CanvasP2 := FU_CanvasOffset(Path[1].P1, CanvPos);
         Target := CanvasP2;
-
+∫
         // Move to initial position in canvas
         MoveFB(
                 StartPos := HomePos,
