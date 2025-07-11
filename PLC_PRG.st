@@ -85,6 +85,7 @@ END_IF
 
 // Control movement execution
 IF MotionActive THEN
+    // First move from outside the Canvas to first canvas point
     IF  NOT ReturnHome AND CurrentIndex = 0 THEN
         t := t + cycle_time;
         
@@ -104,6 +105,7 @@ IF MotionActive THEN
                 SpeedY := CurSpeedY
             );
 
+    // Moving throught the canvas path
     ELSIF NOT ReturnHome AND CurrentIndex <= PathLength THEN
         t := t + cycle_time;
 
@@ -147,6 +149,7 @@ IF MotionActive THEN
             Target := Path[CurrentIndex].P3;
         END_IF;
 
+    // We return home, outside the canvas
     ELSIF ReturnHome THEN
         t := t + cycle_time;
         MoveFB(
