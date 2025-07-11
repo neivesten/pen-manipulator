@@ -48,7 +48,6 @@ VAR
     ReturnHome : BOOL := FALSE;
     ReturnStart : Pos2D;
     HomePos : Pos2D;
-    i : INT;
 END_VAR
 
 // Automatic reset on first cycle
