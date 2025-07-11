@@ -19,9 +19,19 @@ every call.  You can reset these variables to zero when restarting the
 simulation or feed them from the previous segment to achieve continuous
 motion.
 
+## Coordinate Systems
+
+The program works with three coordinate spaces:
+
+1. **Global** – the absolute frame used by the visualisation. All final
+   positions are expressed here.
+2. **Relative/Home** – a frame whose origin is the "home" position of the
+   tool.  The manipulator always starts and ends at this location.
+3. **Canvas** – a local frame describing the drawing canvas. The path
+   points contained in `Path` are specified relative to this origin.
+
 ## Canvas Coordinate Translation
 
-`FU_CanvasOffset` shifts a position from the visualisation coordinate frame
-into a local canvas coordinate system.  Pass the input position from the
-visu and the offset of your canvas origin to obtain the translated
-coordinates.
+`FU_CanvasOffset` converts a position from canvas coordinates to global
+coordinates by adding the offset of the canvas origin.  Use it whenever a
+`PathPoint` needs to be expressed in the global frame.

@@ -38,9 +38,9 @@ VAR
     PathLength : INT := 3;
     MoveFB : FB_LinealMove;
     ArcFB : FB_CircularMove;
-    // Canvas Position:
+    // Absolute position of the canvas origin in the global frame
     CanvPos : Pos2D := (X:=226.0, Y:=132.0);
-    // Temporary storage for path points in canvas coordinates
+    // Temporary storage for path points converted to global coordinates
     CanvasP1 : Pos2D;
     CanvasP2 : Pos2D;
     CanvasP3 : Pos2D;
@@ -58,13 +58,13 @@ END_IF;
 
 // Reset position and initialise offsets
 IF Reset THEN
-    // Record the absolute starting position
-    StartOffset := Path[1].P1;
+    // Home position defines the origin of the relative frame
+    HomePos.X := 0;
+    HomePos.Y := 0;
+    StartOffset := HomePos;
 
-    // TCP starts at the first path point in absolute coordinates
-    TCPAbs := StartOffset;
-    HomePos.X := 0;  // Store home position for return
-	HomePos.Y := 0;
+    // TCP starts at the home position in absolute coordinates
+    TCPAbs := HomePos;
     // No displacement in the local frame at reset
     TCPRel.X := 0.0;
     TCPRel.Y := 0.0;
@@ -89,10 +89,9 @@ IF MotionActive THEN
     IF  NOT ReturnHome AND CurrentIndex = 0 THEN
         t := t + cycle_time;
         
-        // Convert path points to canvas coordinates
+        // Convert first path point from canvas to global coordinates
         CanvasP2 := FU_CanvasOffset(Path[1].P1, CanvPos);
         Target := CanvasP2;
-∫
         // Move to initial position in canvas
         MoveFB(
                 StartPos := HomePos,
@@ -109,6 +108,7 @@ IF MotionActive THEN
     ELSIF NOT ReturnHome AND CurrentIndex <= PathLength THEN
         t := t + cycle_time;
 
+        // Convert current path segment to global coordinates
         CanvasP1 := FU_CanvasOffset(Path[CurrentIndex].P1, CanvPos);
         CanvasP2 := FU_CanvasOffset(Path[CurrentIndex].P2, CanvPos);
         CanvasP3 := FU_CanvasOffset(Path[CurrentIndex].P3, CanvPos);
