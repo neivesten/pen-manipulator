@@ -124,9 +124,6 @@ IF MotionActive THEN
                 SpeedY := CurSpeedY
             );
 
-            // Integrate velocity to update position
-            TCPAbs.X := TCPAbs.X + CurSpeedX * cycle_time;
-            TCPAbs.Y := TCPAbs.Y + CurSpeedY * cycle_time;
             Target := Path[CurrentIndex].P2;
         ELSE
             // Handle arc-based motion segments
