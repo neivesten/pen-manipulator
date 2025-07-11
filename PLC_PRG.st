@@ -144,6 +144,7 @@ IF MotionActive THEN
                 SpeedX := CurSpeedX,
                 SpeedY := CurSpeedY
             );
+            Target := Path[CurrentIndex].P3;
         END_IF;
 
     ELSIF ReturnHome THEN
