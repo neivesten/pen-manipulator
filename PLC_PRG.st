@@ -127,6 +127,9 @@ IF MotionActive THEN
             // Integrate velocity to update position
             TCPAbs.X := TCPAbs.X + CurSpeedX * cycle_time;
             TCPAbs.Y := TCPAbs.Y + CurSpeedY * cycle_time;
+            // Update relative coordinates after integrating
+            TCPRel.X := TCPAbs.X - StartOffset.X;
+            TCPRel.Y := TCPAbs.Y - StartOffset.Y;
             Target := Path[CurrentIndex].P2;
         ELSE
             // Handle arc-based motion segments
@@ -160,6 +163,9 @@ IF MotionActive THEN
     // Integrate velocity to update position
     TCPAbs.X := TCPAbs.X + CurSpeedX * cycle_time;
     TCPAbs.Y := TCPAbs.Y + CurSpeedY * cycle_time;
+    // Update relative coordinates after integrating
+    TCPRel.X := TCPAbs.X - StartOffset.X;
+    TCPRel.Y := TCPAbs.Y - StartOffset.Y;
 
     // Convert precise position to integer for visualization
     VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
