@@ -7,8 +7,6 @@ VAR
     // Integer coordinates for the visualization
     VisuPosX : INT := 0;                // X position in pixels
     VisuPosY : INT := 0;                // Y position in pixels
-    // Absolute position of the first path point
-    StartOffset : Pos2D := (X:=0.0, Y:=0.0);
     // Diameter of the circle used to draw the TCP
     CircleWidth : REAL := 10.0;
     // Flag used to trigger reset on startup
@@ -19,7 +17,7 @@ VAR
 
     t : REAL := 0.0;         // Time since current segment started
     cycle_time : REAL := 0.01; // Simulation step time
-    MaxSpeed : REAL := 25.0;
+    MaxSpeed : REAL := 50.0;
     Accel : REAL := 15.0;
     // Current velocity components used by the motion function blocks
     CurSpeedX : REAL := 0.0;
@@ -34,7 +32,7 @@ VAR
         (P1:=(X:=239.0, Y:=82.0), P2:=(X:=364.0, Y:=182.0), P3:=(X:=239.0, Y:=282.0), IsArc:=TRUE, Break:=TRUE),
 		(P1:=(X:=239.0, Y:=282.0), P2:=(X:=139.0, Y:=82.0), P3:=(X:=139.0, Y:=82.0), IsArc:=FALSE, Break:=TRUE)
     ];
-    CurrentIndex : INT := 0;
+    CurrentIndex : INT := 1;
     PathLength : INT := 3;
     MoveFB : FB_LinealMove;
     ArcFB : FB_CircularMove;
@@ -45,9 +43,10 @@ VAR
     CanvasP2 : Pos2D;
     CanvasP3 : Pos2D;
     // Flag used when returning to the origin
+    Go2Canvas : BOOL := FALSE;
     ReturnHome : BOOL := FALSE;
     ReturnStart : Pos2D;
-    HomePos : Pos2D;
+    HomePos : Pos2D := (X:=25.0, Y:=150.0);
 END_VAR
 
 // Automatic reset on first cycle
@@ -58,11 +57,6 @@ END_IF;
 
 // Reset position and initialise offsets
 IF Reset THEN
-    // Home position defines the origin of the relative frame
-    HomePos.X := 0;
-    HomePos.Y := 0;
-    StartOffset := HomePos;
-
     // TCP starts at the home position in absolute coordinates
     TCPAbs := HomePos;
     // No displacement in the local frame at reset
@@ -75,9 +69,10 @@ IF Reset THEN
     // Reset velocity
     CurSpeedX := 0.0;
     CurSpeedY := 0.0;
-    CurrentIndex := 0;
+    CurrentIndex := 1;
     t := 0.0;
     ReturnHome := FALSE;
+    Go2Canvas := TRUE;
     Reset := FALSE;
 
     
@@ -86,7 +81,7 @@ END_IF
 // Control movement execution
 IF MotionActive THEN
     // First move from outside the Canvas to first canvas point
-    IF  NOT ReturnHome AND CurrentIndex = 0 THEN
+    IF  NOT ReturnHome and Go2Canvas THEN
         t := t + cycle_time;
         
         // Convert first path point from canvas to global coordinates
@@ -99,7 +94,7 @@ IF MotionActive THEN
                 MaxSpeed := MaxSpeed,
                 Accel := Accel,
                 t := t,
-                DecelerateAtEnd := Path[CurrentIndex+1].Break,
+                DecelerateAtEnd := TRUE,
                 SpeedX := CurSpeedX,
                 SpeedY := CurSpeedY
             );
@@ -125,13 +120,6 @@ IF MotionActive THEN
                 SpeedX := CurSpeedX,
                 SpeedY := CurSpeedY
             );
-
-            // Integrate velocity to update position
-            TCPAbs.X := TCPAbs.X + CurSpeedX * cycle_time;
-            TCPAbs.Y := TCPAbs.Y + CurSpeedY * cycle_time;
-            // Update relative coordinates after integrating
-            TCPRel.X := TCPAbs.X - StartOffset.X;
-            TCPRel.Y := TCPAbs.Y - StartOffset.Y;
             Target := Path[CurrentIndex].P2;
         ELSE
             // Handle arc-based motion segments
@@ -168,8 +156,8 @@ IF MotionActive THEN
     TCPAbs.X := TCPAbs.X + CurSpeedX * cycle_time;
     TCPAbs.Y := TCPAbs.Y + CurSpeedY * cycle_time;
     // Update relative coordinates after integrating
-    TCPRel.X := TCPAbs.X - StartOffset.X;
-    TCPRel.Y := TCPAbs.Y - StartOffset.Y;
+    TCPRel.X := TCPAbs.X - HomePos.X;
+    TCPRel.Y := TCPAbs.Y - HomePos.Y;
 
     // Convert precise position to integer for visualization
     VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
@@ -179,6 +167,7 @@ IF MotionActive THEN
     IF ABS(TCPAbs.X - Target.X) < 1 AND ABS(TCPAbs.Y - Target.Y) < 1 THEN
         t := 0.0;
         CurrentIndex := CurrentIndex + 1;
+		Go2Canvas := FALSE;
         IF CurrentIndex > PathLength THEN
             // Begin return to origin on completion
             ReturnHome := TRUE;
