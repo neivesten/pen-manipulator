@@ -8,7 +8,9 @@ trapezoidal and circular motion profiles.
 
 The project can be imported into a ctrlX PLC Engineering workspace.  It
 is mainly intended as a learning resource, so the motion logic is kept
-minimal and easy to read.
+minimal and easy to read.  The original version relied purely on
+time‑based speed profiles.  The code now demonstrates a simple closed
+loop approach using PI controllers.
 
 ## Accessing and Initialising Speed
 
@@ -35,3 +37,12 @@ The program works with three coordinate spaces:
 `FU_CanvasOffset` converts a position from canvas coordinates to global
 coordinates by adding the offset of the canvas origin.  Use it whenever a
 `PathPoint` needs to be expressed in the global frame.
+
+## PI Based Controller
+
+Version 2 of the project introduces `FB_LinealMovePI` and
+`FB_CircularMovePI`.  These blocks calculate the velocity from the
+position error using a simple PI controller rather than relying on a
+pre‑computed time profile.  The controller outputs are integrated inside
+`PLC_PRG` in the same way as before, but the TCP now corrects its path
+when deviations occur.
