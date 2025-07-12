@@ -17,10 +17,11 @@ VAR
     // Absolute destination of the current segment
     Target : Pos2D := (X:=0.0, Y:=0.0);
 
-    t : REAL := 0.0;         // Time since current segment started
     cycle_time : REAL := 0.01; // Simulation step time
     MaxSpeed : REAL := 25.0;
-    Accel : REAL := 15.0;
+    // Gains for the PI controllers
+    Kp : REAL := 2.0;
+    Ki : REAL := 1.0;
     // Current velocity components used by the motion function blocks
     CurSpeedX : REAL := 0.0;
     CurSpeedY : REAL := 0.0;
@@ -36,8 +37,8 @@ VAR
     ];
     CurrentIndex : INT := 1;
     PathLength : INT := 3;
-    MoveFB : FB_LinealMove;
-    ArcFB : FB_CircularMove;
+    MovePI : FB_LinealMovePI;
+    ArcPI : FB_CircularMovePI;
 END_VAR
 
 // Automatic reset on first cycle
@@ -64,7 +65,6 @@ IF Reset THEN
     CurSpeedX := 0.0;
     CurSpeedY := 0.0;
     CurrentIndex := 1;
-    t := 0.0;
     Reset := FALSE;
 
     
@@ -72,17 +72,16 @@ END_IF
 
 // Control movement execution
 IF MotionActive AND CurrentIndex <= PathLength THEN
-    t := t + cycle_time;
 
     IF NOT Path[CurrentIndex].IsArc THEN
-        // Handle linear motion segments
-        MoveFB(
-            StartPos := Path[CurrentIndex].P1,
+        // Handle linear motion segments using PI control
+        MovePI(
+            CurPos := TCPAbs,
             TargetPos := Path[CurrentIndex].P2,
             MaxSpeed := MaxSpeed,
-            Accel := Accel,
-            t := t,
-            DecelerateAtEnd := Path[CurrentIndex].Break,
+            Kp := Kp,
+            Ki := Ki,
+            Ts := cycle_time,
             SpeedX := CurSpeedX,
             SpeedY := CurSpeedY
         );
@@ -92,15 +91,16 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
         TCPAbs.Y := TCPAbs.Y + CurSpeedY * cycle_time;
         Target := Path[CurrentIndex].P2;
     ELSE
-        // Handle arc-based motion segments
-        ArcFB(
+        // Handle arc-based motion segments using PI control
+        ArcPI(
+            CurPos := TCPAbs,
             P1 := Path[CurrentIndex].P1,
             P2 := Path[CurrentIndex].P2,
             P3 := Path[CurrentIndex].P3,
             MaxSpeed := MaxSpeed,
-            Accel := Accel,
-            t := t,
-            DecelerateAtEnd := Path[CurrentIndex].Break
+            Kp := Kp,
+            Ki := Ki,
+            Ts := cycle_time,
             SpeedX := CurSpeedX,
             SpeedY := CurSpeedY
         );
@@ -121,7 +121,6 @@ IF MotionActive AND CurrentIndex <= PathLength THEN
 
     // Check if current target is reached and progress to next segment
     IF ABS(TCPAbs.X - Target.X) < 1 AND ABS(TCPAbs.Y - Target.Y) < 1 THEN
-        t := 0.0;
         CurrentIndex := CurrentIndex + 1;
     END_IF;
 END_IF;
