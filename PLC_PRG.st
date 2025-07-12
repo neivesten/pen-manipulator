@@ -15,11 +15,11 @@ VAR
     // Absolute destination of the current segment
     Target : Pos2D := (X:=0.0, Y:=0.0);
 
-    cycle_time : REAL := 0.01; // Simulation step time
-    MaxSpeed : REAL := 25.0;
+    cycle_time : REAL := 0.001; // Simulation step time
+    MaxSpeed : REAL := 15.0;
     // Gains for the PI controllers
     Kp : REAL := 2.0;
-    Ki : REAL := 1.0;
+    Ki : REAL := 0.0;
     // Current velocity components used by the motion function blocks
     CurSpeedX : REAL := 0.0;
     CurSpeedY : REAL := 0.0;
@@ -71,49 +71,71 @@ IF Reset THEN
     CurSpeedX := 0.0;
     CurSpeedY := 0.0;
     CurrentIndex := 1;
-    t := 0.0;
     ReturnHome := FALSE;
     Go2Canvas := TRUE;
     Reset := FALSE;
-
-    
 END_IF
 
 // Control movement execution
 IF MotionActive THEN
     // First move from outside the Canvas to first canvas point
     IF  NOT ReturnHome and Go2Canvas THEN
-        t := t + cycle_time;
-        
         // Convert first path point from canvas to global coordinates
         CanvasP2 := FU_CanvasOffset(Path[1].P1, CanvPos);
         Target := CanvasP2;
         // Move to initial position in canvas
-        MoveFB(
-                StartPos := HomePos,
+        MovePI(
+                CurPos := TCPAbs,
                 TargetPos := CanvasP2,
                 MaxSpeed := MaxSpeed,
-                Accel := Accel,
-                t := t,
-                DecelerateAtEnd := TRUE,
+                Ts := cycle_time,
+                Kp := Kp,
+                Ki := Ki,
                 SpeedX := CurSpeedX,
                 SpeedY := CurSpeedY
             );
 
     // Moving throught the canvas path
     ELSIF NOT ReturnHome AND CurrentIndex <= PathLength THEN
-        t := t + cycle_time;
-
         // Convert current path segment to global coordinates
         CanvasP1 := FU_CanvasOffset(Path[CurrentIndex].P1, CanvPos);
         CanvasP2 := FU_CanvasOffset(Path[CurrentIndex].P2, CanvPos);
         CanvasP3 := FU_CanvasOffset(Path[CurrentIndex].P3, CanvPos);
 
-    IF NOT Path[CurrentIndex].IsArc THEN
-        // Handle linear motion segments using PI control
+        IF NOT Path[CurrentIndex].IsArc THEN
+            // Handle linear motion segments using PI control
+            MovePI(
+                CurPos := TCPAbs,
+                TargetPos := CanvasP2,
+                MaxSpeed := MaxSpeed,
+                Kp := Kp,
+                Ki := Ki,
+                Ts := cycle_time,
+                SpeedX := CurSpeedX,
+                SpeedY := CurSpeedY
+            );
+            Target := CanvasP2;
+        ELSE
+            // Handle arc-based motion segments using PI control
+            ArcPI(
+                CurPos := TCPAbs,
+                P1 := CanvasP1,
+                P2 := CanvasP2,
+                P3 := CanvasP3,
+                MaxSpeed := MaxSpeed,
+                Kp := Kp,
+                Ki := Ki,
+                Ts := cycle_time,
+                SpeedX := CurSpeedX,
+                SpeedY := CurSpeedY
+            );
+            Target := CanvasP3;
+        END_IF
+    ELSIF ReturnHome THEN
+        // Move back to the home position after completing the path
         MovePI(
             CurPos := TCPAbs,
-            TargetPos := CanvasP2,
+            TargetPos := HomePos,
             MaxSpeed := MaxSpeed,
             Kp := Kp,
             Ki := Ki,
@@ -121,27 +143,8 @@ IF MotionActive THEN
             SpeedX := CurSpeedX,
             SpeedY := CurSpeedY
         );
-
-        // Integrate velocity to update position
-        TCPAbs.X := TCPAbs.X + CurSpeedX * cycle_time;
-        TCPAbs.Y := TCPAbs.Y + CurSpeedY * cycle_time;
-        Target := Path[CurrentIndex].P2;
-    ELSE
-        // Handle arc-based motion segments using PI control
-        ArcPI(
-            CurPos := TCPAbs,
-            P1 := Path[CurrentIndex].P1,
-            P2 := Path[CurrentIndex].P2,
-            P3 := Path[CurrentIndex].P3,
-            MaxSpeed := MaxSpeed,
-            Kp := Kp,
-            Ki := Ki,
-            Ts := cycle_time,
-            SpeedX := CurSpeedX,
-            SpeedY := CurSpeedY
-        );
+        Target := HomePos;
     END_IF
-
     // Integrate velocity to update position
     TCPAbs.X := TCPAbs.X + CurSpeedX * cycle_time;
     TCPAbs.Y := TCPAbs.Y + CurSpeedY * cycle_time;
@@ -155,19 +158,23 @@ IF MotionActive THEN
 
     // Check if current target is reached and progress to next segment
     IF ABS(TCPAbs.X - Target.X) < 1 AND ABS(TCPAbs.Y - Target.Y) < 1 THEN
-        CurrentIndex := CurrentIndex + 1;
-		Go2Canvas := FALSE;
-        IF CurrentIndex > PathLength THEN
+        IF Go2Canvas THEN
+            Go2Canvas := FALSE;
+        ELSE
+            CurrentIndex := CurrentIndex + 1;
+        END_IF
+		
+        IF CurrentIndex > PathLength AND NOT ReturnHome THEN
             // Begin return to origin on completion
             ReturnHome := TRUE;
             ReturnStart := TCPRel;
-            t := 0.0;
         END_IF;
-    END_IF;
-
-    IF ReturnHome AND ABS(TCPRel.X) < 1 AND ABS(TCPRel.Y) < 1 THEN
-        MotionActive := FALSE;
-        ReturnHome := FALSE;
+        IF ReturnHome THEN
+            // Set target to home position for return
+            Target := HomePos;
+            MotionActive := FALSE;
+            ReturnHome := FALSE;
+        END_IF;
     END_IF;
 END_IF;
 
