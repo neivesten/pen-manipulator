@@ -37,6 +37,11 @@ VAR
     M12X, M12Y, M23X, M23Y : REAL;
     RHS1, RHS2, D : REAL;
     angleP2 : REAL;
+
+    AngleError : REAL;
+    AngleInt : REAL;
+    AngleKp : REAL := 10.0;
+    AngleKi : REAL := 50.0;
 END_VAR
 
 IF NOT InitDone THEN
@@ -112,7 +117,21 @@ ELSIF SpeedY < -MaxSpeed THEN
     SpeedY := -MaxSpeed;
 END_IF;
 
-SpeedMag := SQRT(SpeedX * SpeedX + SpeedY * SpeedY);
+// Use a PI controller to drive the angle progression toward max tangential speed
+AngleError := MaxSpeed - SQRT(SpeedX * SpeedX + SpeedY * SpeedY);
+AngleInt := AngleInt + AngleKi * AngleError * Ts;
+IF AngleInt > MaxSpeed THEN
+    AngleInt := MaxSpeed;
+ELSIF AngleInt < 0 THEN
+    AngleInt := 0;
+END_IF;
+SpeedMag := AngleKp * AngleError + AngleInt;
+IF SpeedMag > MaxSpeed THEN
+    SpeedMag := MaxSpeed;
+ELSIF SpeedMag < 0 THEN
+    SpeedMag := 0;
+END_IF;
+
 IF Radius > 0 THEN
     Angle := Angle + Dir * (SpeedMag / Radius) * Ts;
 END_IF;

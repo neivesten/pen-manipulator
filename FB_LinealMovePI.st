@@ -21,6 +21,10 @@ VAR
     IntY : REAL;   // Integrator state for Y axis
     ErrX : REAL;
     ErrY : REAL;
+    TotalErr : REAL;
+    NormErrX : REAL;
+    NormErrY : REAL;
+    Scale : REAL;
 END_VAR
 
 ErrX := TargetPos.X - CurPos.X;
@@ -41,19 +45,25 @@ ELSIF IntY < -MaxSpeed THEN
     IntY := -MaxSpeed;
 END_IF;
 
-SpeedX := Kp * ErrX + IntX;
-SpeedY := Kp * ErrY + IntY;
+// Compute total error magnitude
+TotalErr := SQRT(ErrX * ErrX + ErrY * ErrY);
 
-// Saturate outputs
-IF SpeedX > MaxSpeed THEN
-    SpeedX := MaxSpeed;
-ELSIF SpeedX < -MaxSpeed THEN
-    SpeedX := -MaxSpeed;
+// Avoid divide-by-zero
+IF TotalErr > 0.01 THEN
+    NormErrX := ErrX / TotalErr;
+    NormErrY := ErrY / TotalErr;
+ELSE
+    NormErrX := 0.0;
+    NormErrY := 0.0;
 END_IF;
-IF SpeedY > MaxSpeed THEN
-    SpeedY := MaxSpeed;
-ELSIF SpeedY < -MaxSpeed THEN
-    SpeedY := -MaxSpeed;
+
+// Compute common scale from PI controller on the magnitude
+Scale := Kp * TotalErr + (Ki * TotalErr * Ts);
+IF Scale > MaxSpeed THEN
+    Scale := MaxSpeed;
 END_IF;
+
+SpeedX := Scale * NormErrX;
+SpeedY := Scale * NormErrY;
 
 // End of FB_LinealMovePI

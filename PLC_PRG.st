@@ -12,17 +12,20 @@ VAR
     // Flag used to trigger reset on startup
     InitDone : BOOL := FALSE;
 
-    // Absolute destination of the current segment
+    // Absolute destination of the current segment, used for checking if the target is reached
     Target : Pos2D := (X:=0.0, Y:=0.0);
 
     cycle_time : REAL := 0.001; // Simulation step time
-    MaxSpeed : REAL := 15.0;
+    MaxSpeed : REAL := 100.0;
     // Gains for the PI controllers
     Kp : REAL := 2.0;
-    Ki : REAL := 0.0;
+    Ki : REAL := 0.1;
     // Current velocity components used by the motion function blocks
     CurSpeedX : REAL := 0.0;
     CurSpeedY : REAL := 0.0;
+
+    max_error : INT := 1; // Maximum error to consider the target reached
+    continuity_error : INT := 15;
 
 
     MotionActive : BOOL := TRUE;
@@ -116,20 +119,34 @@ IF MotionActive THEN
             );
             Target := CanvasP2;
         ELSE
-            // Handle arc-based motion segments using PI control
-            ArcPI(
-                CurPos := TCPAbs,
-                P1 := CanvasP1,
-                P2 := CanvasP2,
-                P3 := CanvasP3,
-                MaxSpeed := MaxSpeed,
-                Kp := Kp,
-                Ki := Ki,
-                Ts := cycle_time,
-                SpeedX := CurSpeedX,
-                SpeedY := CurSpeedY
-            );
             Target := CanvasP3;
+            IF ABS(TCPAbs.X - Target.X) > continuity_error OR ABS(TCPAbs.Y - Target.Y) > continuity_error THEN
+                // Handle arc-based motion segments using PI control
+                ArcPI(
+                    CurPos := TCPAbs,
+                    P1 := CanvasP1,
+                    P2 := CanvasP2,
+                    P3 := CanvasP3,
+                    MaxSpeed := MaxSpeed,
+                    Kp := Kp,
+                    Ki := Ki,
+                    Ts := cycle_time,
+                    SpeedX := CurSpeedX,
+                    SpeedY := CurSpeedY
+                );
+            ELSE // If we are close to the target, we can use a simple linear move to close the gap
+                MovePI(
+                    CurPos := TCPAbs,
+                    TargetPos := CanvasP3,
+                    MaxSpeed := MaxSpeed,
+                    Kp := Kp,
+                    Ki := Ki,
+                    Ts := cycle_time,
+                    SpeedX := CurSpeedX,
+                    SpeedY := CurSpeedY
+                );
+            END_IF
+            
         END_IF
     ELSIF ReturnHome THEN
         // Move back to the home position after completing the path
@@ -157,10 +174,16 @@ IF MotionActive THEN
     VisuPosY := TO_INT(TCPRel.Y - CircleWidth / 2.0);
 
     // Check if current target is reached and progress to next segment
-    IF ABS(TCPAbs.X - Target.X) < 1 AND ABS(TCPAbs.Y - Target.Y) < 1 THEN
-        IF Go2Canvas THEN
-            Go2Canvas := FALSE;
-        ELSE
+    IF ABS(TCPAbs.X - Target.X) < continuity_error OR ABS(TCPAbs.Y - Target.Y) < continuity_error THEN
+        
+        IF Go2Canvas or Path[CurrentIndex].Break THEN
+            // If the current segment is a break point or we are moving to canvas or returning home
+            // we need to wait until we sto completely before moving to the next segment
+            IF ABS(TCPAbs.X - Target.X) < max_error AND ABS(TCPAbs.Y - Target.Y) < max_error THEN
+                Go2Canvas := FALSE;
+                CurrentIndex := CurrentIndex + 1;
+            END_IF
+        ELSE // We are not at a break point, so we can move to the next segment without stopping
             CurrentIndex := CurrentIndex + 1;
         END_IF
 		
@@ -169,7 +192,7 @@ IF MotionActive THEN
             ReturnHome := TRUE;
             ReturnStart := TCPRel;
         END_IF;
-        IF ReturnHome THEN
+        IF ReturnHome AND ABS(TCPAbs.X - Target.X) < max_error AND ABS(TCPAbs.Y - Target.Y) < max_error THEN
             // Set target to home position for return
             Target := HomePos;
             MotionActive := FALSE;
@@ -177,5 +200,3 @@ IF MotionActive THEN
         END_IF;
     END_IF;
 END_IF;
-
-// End of PLC_PRG
