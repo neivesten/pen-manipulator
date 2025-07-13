@@ -94,7 +94,7 @@ VAR
 	iArrow2pos2x: INT;
 	iArrow2pos2y: INT;
 	
-	bZnotTouching: BOOL:=FALSE;
+	bZnotTouching: BOOL:=FALSE;  
 	
 	 // Absolute position of the canvas origin in the global frame
     CanvPos : Pos2D := (X:=125.0, Y:=120.0);
@@ -142,6 +142,8 @@ END_IF
 
 // Control movement execution
 IF MotionActive THEN
+
+	
     // First move from outside the Canvas to first canvas point
     IF  NOT ReturnHome and Go2Canvas THEN
         t := t + cycle_time;
@@ -245,6 +247,11 @@ tcpFB(
     // Check if current target is reached and progress to next segment
     IF ABS(TCPAbs.X - Target.X) < 1 AND ABS(TCPAbs.Y - Target.Y) < 1 THEN
         t := 0.0;
+		IF Path[CurrentIndex].Break THEN
+		bZnotTouching := TRUE; 
+		ELSE 
+			bZnotTouching := FALSE; 
+		END_IF
         CurrentIndex := CurrentIndex + 1;
 		Go2Canvas := FALSE;
         IF CurrentIndex > PathLength THEN
