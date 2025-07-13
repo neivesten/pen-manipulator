@@ -15,8 +15,8 @@ VAR
     // Absolute destination of the current segment, used for checking if the target is reached
     Target : Pos2D := (X:=0.0, Y:=0.0);
     t : REAL := 0.0;         // Time since current segment started
-    cycle_time : REAL := 0.001; // Simulation step time
-    MaxSpeed : REAL := 100.0;
+    cycle_time : REAL := 0.01; // Simulation step time
+    MaxSpeed : REAL := 25.0;
     Accel : REAL := 15.0;
     // Gains for the PI controllers
     Kp : REAL := 2.0;
@@ -78,6 +78,7 @@ IF Reset THEN
     CurSpeedY := 0.0;
     CurrentIndex := 1;
     ReturnHome := FALSE;
+    t := 0.0;
     Go2Canvas := TRUE;
     Reset := FALSE;
 END_IF
@@ -186,11 +187,14 @@ IF MotionActive THEN
                     CurrentIndex := CurrentIndex + 1;
                 END_IF;
                 Go2Canvas := FALSE;
+                t := 0.0; // Reset time for the next segment
             END_IF
-        ELSIF not Go2Canvas THEN // We are not at a break point, so we can move to the next segment without stoppingç
+        ELSIF not Go2Canvas THEN // We are not at a break point, so we can move to the next segment without stopping
             IF ABS(TCPAbs.X - Target.X) < max_error AND ABS(TCPAbs.Y - Target.Y) < max_error THEN
                 CurrentIndex := CurrentIndex + 1;
+                t := 0.0; // Reset time for the next segment
             END_IF;
+            
         END_IF
 		
         IF CurrentIndex > PathLength AND NOT ReturnHome THEN
