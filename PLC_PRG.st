@@ -36,26 +36,26 @@ VAR
     
 //Emoji coordinates in the Emoji visu coordinate system
 	Emoji :  ARRAY[1..20] OF pos2D := [
-        (X:=45.0, Y:=175.0), // 1
- 		(X:=50.0, Y:=135.0), // 2
-		(X:=90.0, Y:=130.0), // 3
-		(X:=550.0, Y:=130.0), // 4
-		(X:=590.0, Y:=135.0), // 5
-		(X:=595.0, Y:=175.0), // 6
-		(X:=595.0, Y:=430.0), // 7
-		(X:=590.0, Y:=470.0), // 8
-		(X:=550.0, Y:=475.0), // 9
-		(X:=90.0, Y:=475.0), // 10
-		(X:=50.0, Y:=470.0), // 11
- 		(X:=45.0, Y:=430.0), // 12
-		(X:=180.0, Y:=275.0), // 13
-		(X:=245.0, Y:=325.0), // 14
-		(X:=245.0, Y:=250.0), // 15
-		(X:=320.0, Y:=270.0), // 16
-		(X:=400.0, Y:=250.0), // 17
-		(X:=400.0, Y:=325.0), // 18
-		(X:=320.0, Y:=425.0), // 19
-		(X:=460.0, Y:=275.0) // 20
+        (X:=35.0, Y:=175.0), // 1
+        (X:=40.0, Y:=135.0), // 2
+        (X:=80.0, Y:=130.0), // 3
+        (X:=540.0, Y:=130.0), // 4
+        (X:=580.0, Y:=135.0), // 5
+        (X:=585.0, Y:=175.0), // 6
+        (X:=585.0, Y:=430.0), // 7
+        (X:=580.0, Y:=470.0), // 8
+        (X:=540.0, Y:=475.0), // 9
+        (X:=80.0, Y:=475.0), // 10
+        (X:=40.0, Y:=470.0), // 11
+        (X:=35.0, Y:=430.0), // 12
+        (X:=170.0, Y:=275.0), // 13
+        (X:=235.0, Y:=325.0), // 14
+        (X:=235.0, Y:=250.0), // 15
+        (X:=310.0, Y:=270.0), // 16
+        (X:=390.0, Y:=250.0), // 17
+        (X:=390.0, Y:=325.0), // 18
+        (X:=310.0, Y:=425.0), // 19
+        (X:=450.0, Y:=275.0)  // 20
     ];
 	Path : ARRAY[1..17] OF PathPoint := [
         (P1:=Emoji[1], P2:=Emoji[2], P3:=Emoji[3], IsArc:=TRUE, Break:=FALSE), //1
@@ -111,7 +111,6 @@ VAR
 END_VAR
 
 
-
 // Automatic reset on first cycle
 IF NOT InitDone THEN
     Reset := TRUE;
@@ -138,6 +137,12 @@ IF Reset THEN
     t := 0.0;
     Go2Canvas := TRUE;
     Reset := FALSE;
+
+    // Reset TCP Axes
+	iArrow1pos2x:= VisuPosX+iAngleX -50;
+	iArrow1pos2y:= VisuPosY+iAngleY;
+	iArrow2pos2x:= VisuPosX-iAngleY;
+	iArrow2pos2y:= VisuPosY+iAngleX-50;
 END_IF
 
 // Control movement execution
@@ -244,7 +249,7 @@ IF MotionActive THEN
     VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
     VisuPosY := TO_INT(TCPRel.Y - CircleWidth / 2.0);
 	
-		// pos arrows tcp
+    // pos arrows tcp
 	iArrow1pos2x:= VisuPosX+iAngleX -50;
 	iArrow1pos2y:= VisuPosY+iAngleY;
 	iArrow2pos2x:= VisuPosX-iAngleY;
