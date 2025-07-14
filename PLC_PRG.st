@@ -33,11 +33,7 @@ VAR
     MotionActive : BOOL := TRUE;
     Reset : BOOL := FALSE;
 
-    Path : ARRAY[1..3] OF PathPoint := [
-        (P1:=(X:=139.0, Y:=82.0), P2:=(X:=239.0, Y:=82.0), P3:=(X:=239.0, Y:=82.0), IsArc:=FALSE, Break:=FALSE),
-        (P1:=(X:=239.0, Y:=82.0), P2:=(X:=364.0, Y:=182.0), P3:=(X:=239.0, Y:=282.0), IsArc:=TRUE, Break:=TRUE),
-		(P1:=(X:=239.0, Y:=282.0), P2:=(X:=139.0, Y:=82.0), P3:=(X:=139.0, Y:=82.0), IsArc:=FALSE, Break:=TRUE)
-    ];
+    
 //Emoji coordinates in the Emoji visu coordinate system
 	Emoji :  ARRAY[1..20] OF pos2D := [
         (X:=45.0, Y:=175.0), // 1
@@ -61,12 +57,12 @@ VAR
 		(X:=320.0, Y:=425.0), // 19
 		(X:=460.0, Y:=275.0) // 20
     ];
-	EmojiPath : ARRAY[1..20] OF PathPoint := [
-        (P1:=Emoji[1], P2:=Emoji[2], P3:=Emoji[3], IsArc:=TRUE, Break:=FALSE),
-        (P1:=Emoji[3], P2:=Emoji[4], P3:=Emoji[4], IsArc:=FALSE, Break:=FALSE),
-		(P1:=Emoji[4], P2:=Emoji[5], P3:=Emoji[6], IsArc:=TRUE, Break:=FALSE),
-		(P1:=Emoji[6], P2:=Emoji[7], P3:=Emoji[7], IsArc:=FALSE, Break:=FALSE),
-		(P1:=Emoji[7], P2:=Emoji[8], P3:=Emoji[9], IsArc:=TRUE, Break:=FALSE),
+	Path : ARRAY[1..17] OF PathPoint := [
+        (P1:=Emoji[1], P2:=Emoji[2], P3:=Emoji[3], IsArc:=TRUE, Break:=FALSE), //1
+        (P1:=Emoji[3], P2:=Emoji[4], P3:=Emoji[4], IsArc:=FALSE, Break:=FALSE), //2
+		(P1:=Emoji[4], P2:=Emoji[5], P3:=Emoji[6], IsArc:=TRUE, Break:=FALSE), //3
+		(P1:=Emoji[6], P2:=Emoji[7], P3:=Emoji[7], IsArc:=FALSE, Break:=FALSE), //4
+		(P1:=Emoji[7], P2:=Emoji[8], P3:=Emoji[9], IsArc:=TRUE, Break:=FALSE), //5
 		(P1:=Emoji[9], P2:=Emoji[10], P3:=Emoji[10], IsArc:=FALSE, Break:=FALSE),
 		(P1:=Emoji[10], P2:=Emoji[11], P3:=Emoji[12], IsArc:=TRUE, Break:=FALSE),
 		(P1:=Emoji[12], P2:=Emoji[1], P3:=Emoji[1], IsArc:=FALSE, Break:=TRUE),
@@ -82,8 +78,8 @@ VAR
     ];
 
     CurrentIndex : INT := 1;
-    PathLength : INT := 3;
-    iEmotiPathLenght : INT := 20;
+    PathLength : INT := 17;
+    
     MovePI : FB_LinealMovePI;
     MoveFB : FB_LinealMove;
     ArcFB : FB_CircularMove;
@@ -102,7 +98,7 @@ VAR
     bZnotTouching: BOOL:=FALSE;  
 
     // Absolute position of the canvas origin in the global frame
-    CanvPos : Pos2D := (X:=226.0, Y:=132.0);
+    CanvPos : Pos2D := (X:=125.0, Y:=120.0);
     // Temporary storage for path points converted to global coordinates
     CanvasP1 : Pos2D;
     CanvasP2 : Pos2D;
@@ -111,7 +107,7 @@ VAR
     Go2Canvas : BOOL := FALSE;
     ReturnHome : BOOL := FALSE;
     ReturnStart : Pos2D;
-    HomePos : Pos2D := (X:=25.0, Y:=150.0);
+    HomePos : Pos2D := (X:=25.0, Y:=100.0);
 END_VAR
 
 // Automatic reset on first cycle
@@ -246,10 +242,10 @@ IF MotionActive THEN
     VisuPosY := TO_INT(TCPRel.Y - CircleWidth / 2.0);
 	
 		// pos arrows tcp
-	iArrow1pos2x:= VisuPosX+iAngleX;
+	iArrow1pos2x:= VisuPosX+iAngleX -50;
 	iArrow1pos2y:= VisuPosY+iAngleY;
 	iArrow2pos2x:= VisuPosX-iAngleX;
-	iArrow2pos2y:= VisuPosX+iAngleY;
+	iArrow2pos2y:= VisuPosY+iAngleY-50;
 
     // Check if current target is reached and progress to next segment
     IF ABS(TCPAbs.X - Target.X) < continuity_error AND ABS(TCPAbs.Y - Target.Y) < continuity_error THEN
