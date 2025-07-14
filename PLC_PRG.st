@@ -111,6 +111,7 @@ VAR
 END_VAR
 
 
+
 // Automatic reset on first cycle
 IF NOT InitDone THEN
     Reset := TRUE;
@@ -196,7 +197,7 @@ IF MotionActive THEN
         ELSIF ReturnHome THEN
             // Move back to the home position after completing the path
             MoveFB(
-                StartPos := Path[PathLength].P3, // Use last point of the path as start
+                StartPos := ReturnStart, // Use last point of the path as start
                 TargetPos := HomePos,
                 MaxSpeed := MaxSpeed,
                 Accel := Accel,
@@ -284,9 +285,9 @@ IF MotionActive THEN
         IF CurrentIndex > PathLength AND NOT ReturnHome THEN
             // Begin return to origin on completion
             ReturnHome := TRUE;
-            ReturnStart := TCPRel;
-        END_IF;
-        IF ReturnHome AND ABS(TCPAbs.X - Target.X) < max_error AND ABS(TCPAbs.Y - Target.Y) < max_error THEN
+            ReturnStart := TCPAbs;
+			CurrentIndex := 1;
+        ELSIF ReturnHome AND ABS(TCPAbs.X - Target.X) < max_error AND ABS(TCPAbs.Y - Target.Y) < max_error THEN
             // Set target to home position for return
             Target := HomePos;
             MotionActive := FALSE;
