@@ -110,6 +110,7 @@ VAR
     HomePos : Pos2D := (X:=25.0, Y:=100.0);
 END_VAR
 
+
 // Automatic reset on first cycle
 IF NOT InitDone THEN
     Reset := TRUE;
@@ -127,6 +128,7 @@ IF Reset THEN
     // Initialise the visualisation values
     VisuPosX := TO_INT(TCPRel.X - CircleWidth / 2.0);
     VisuPosY := TO_INT(TCPRel.Y - CircleWidth / 2.0);
+	bZnotTouching := TRUE;
     // Reset velocity
     CurSpeedX := 0.0;
     CurSpeedY := 0.0;
@@ -244,8 +246,8 @@ IF MotionActive THEN
 		// pos arrows tcp
 	iArrow1pos2x:= VisuPosX+iAngleX -50;
 	iArrow1pos2y:= VisuPosY+iAngleY;
-	iArrow2pos2x:= VisuPosX-iAngleX;
-	iArrow2pos2y:= VisuPosY+iAngleY-50;
+	iArrow2pos2x:= VisuPosX-iAngleY;
+	iArrow2pos2y:= VisuPosY+iAngleX-50;
 
     // Check if current target is reached and progress to next segment
     IF ABS(TCPAbs.X - Target.X) < continuity_error AND ABS(TCPAbs.Y - Target.Y) < continuity_error THEN
@@ -253,15 +255,18 @@ IF MotionActive THEN
             // If the current segment is a break point or we are moving to canvas or returning home
             // we need to wait until we sto completely before moving to the next segment
             closing_distnace := TRUE; // Set flag to indicate we are closing distance
-
+			 
             IF ABS(TCPAbs.X - Target.X) < max_error AND ABS(TCPAbs.Y - Target.Y) < max_error THEN
                 closing_distnace := FALSE; // Reset closing distance flag
+				
+				IF Go2Canvas THEN
+					bZnotTouching := FALSE; 
+				ELSE
+					bZnotTouching := TRUE; // if break we will elevate the robot z axis
+				END_IF
+				
                 IF not Go2Canvas THEN
-                    IF Path[CurrentIndex].Break THEN
-                        bZnotTouching := TRUE; 
-                        ELSE 
-                            bZnotTouching := FALSE; 
-                        END_IF
+                   
                     CurrentIndex := CurrentIndex + 1;
                 END_IF;
                 Go2Canvas := FALSE;
@@ -271,6 +276,7 @@ IF MotionActive THEN
             IF ABS(TCPAbs.X - Target.X) < max_error AND ABS(TCPAbs.Y - Target.Y) < max_error THEN
                 CurrentIndex := CurrentIndex + 1;
                 t := 0.0; // Reset time for the next segment
+				 bZnotTouching := FALSE;
             END_IF;
             
         END_IF
