@@ -46,6 +46,7 @@ VAR
     RHS1, RHS2, D : REAL;
 END_VAR
 
+
 // Main calculation block: Move from P1 to P3 through P2 along a circular arc
 
 // Calculate circle center using perpendicular bisector intersection
