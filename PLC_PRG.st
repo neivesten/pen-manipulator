@@ -17,7 +17,7 @@ VAR
     t : REAL := 0.0;         // Time since current segment started
     cycle_time : REAL := 0.01; // Simulation step time
     MaxSpeed : REAL := 25.0;
-    Accel : REAL := 15.0;
+    Accel : REAL := 15;
     // Gains for the PI controllers
     Kp : REAL := 2.0;
     Ki : REAL := 0.1;
@@ -69,10 +69,10 @@ VAR
 		(P1:=Emoji[1], P2:=Emoji[2], P3:=Emoji[2], IsArc:=FALSE, Break:=FALSE), //jump to 2 no tracing
 		(P1:=Emoji[2], P2:=Emoji[13], P3:=Emoji[13], IsArc:=FALSE, Break:=TRUE),
 		(P1:=Emoji[13], P2:=Emoji[14], P3:=Emoji[14], IsArc:=FALSE, Break:=FALSE), //jump to 14
-		(P1:=Emoji[14], P2:=Emoji[15], P3:=Emoji[16], IsArc:=TRUE, Break:=FALSE),
-		(P1:=Emoji[16], P2:=Emoji[17], P3:=Emoji[18], IsArc:=TRUE, Break:=FALSE),
-		(P1:=Emoji[18], P2:=Emoji[19], P3:=Emoji[19], IsArc:=FALSE, Break:=FALSE),
-		(P1:=Emoji[19], P2:=Emoji[14], P3:=Emoji[14], IsArc:=FALSE, Break:=TRUE),
+		(P1:=Emoji[14], P2:=Emoji[19], P3:=Emoji[19], IsArc:=FALSE, Break:=TRUE),
+		(P1:=Emoji[19], P2:=Emoji[18], P3:=Emoji[18], IsArc:=FALSE, Break:=FALSE),
+		(P1:=Emoji[18], P2:=Emoji[17], P3:=Emoji[16], IsArc:=TRUE, Break:=TRUE),
+		(P1:=Emoji[16], P2:=Emoji[15], P3:=Emoji[14], IsArc:=TRUE, Break:=TRUE),
 		(P1:=Emoji[14], P2:=Emoji[20], P3:=Emoji[20], IsArc:=FALSE, Break:=FALSE),// jump to 20
 		(P1:=Emoji[20], P2:=Emoji[5], P3:=Emoji[5], IsArc:=FALSE, Break:=TRUE)
     ];
@@ -161,7 +161,7 @@ IF MotionActive THEN
                 MaxSpeed := MaxSpeed,
                 Accel := Accel,
                 t := t,
-                DecelerateAtEnd := Path[CurrentIndex].Break,
+                DecelerateAtEnd := TRUE,
                 SpeedX := CurSpeedX,
                 SpeedY := CurSpeedY
             );

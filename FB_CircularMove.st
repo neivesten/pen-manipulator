@@ -138,7 +138,7 @@ IF t < t_acc THEN
     s_t := v0 * t + 0.5 * Accel * t * t;
 
 // Constant speed phase or skipping deceleration
-ELSIF t < t_acc + t_const OR NOT DecelerateAtEnd THEN
+ELSIF t < t_acc + t_const THEN      // no infinite run‑on
     v := MaxSpeed;
     s_t := s_acc + v * (t - t_acc);
 
@@ -155,7 +155,7 @@ ELSE
 END_IF;
 
 Angle := StartAngle + Dir * (s_t / Radius);
-AngularSpeed := v / Radius;
+AngularSpeed := Dir * v / Radius;   // include direction sign
 SpeedX := -SIN(Angle) * AngularSpeed * Radius;
 SpeedY := COS(Angle) * AngularSpeed * Radius;
 // End of FB_CircularMove
