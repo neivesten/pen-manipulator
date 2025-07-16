@@ -16,7 +16,7 @@ VAR
     Target : Pos2D := (X:=0.0, Y:=0.0);
     t : REAL := 0.0;         // Time since current segment started
     cycle_time : REAL := 0.01; // Simulation step time
-    MaxSpeed : REAL := 25.0;
+    rMaxSpeed : REAL := 25.0;
     Accel : REAL := 15;
     // Gains for the PI controllers
     Kp : REAL := 2.0;
@@ -24,6 +24,7 @@ VAR
     // Current velocity components used by the motion function blocks
     CurSpeedX : REAL := 0.0;
     CurSpeedY : REAL := 0.0;
+	ModuleSpeed : REAL := 0.0; //module of Cur Speed X/Y
 
     max_error : INT := 1; // Maximum error to consider the target reached
     continuity_error : INT := 15;
@@ -58,23 +59,23 @@ VAR
         (X:=450.0, Y:=275.0)  // 20
     ];
 	Path : ARRAY[1..17] OF PathPoint := [
-        (P1:=Emoji[1], P2:=Emoji[2], P3:=Emoji[3], IsArc:=TRUE, Break:=FALSE), //1
-        (P1:=Emoji[3], P2:=Emoji[4], P3:=Emoji[4], IsArc:=FALSE, Break:=FALSE), //2
-		(P1:=Emoji[4], P2:=Emoji[5], P3:=Emoji[6], IsArc:=TRUE, Break:=FALSE), //3
-		(P1:=Emoji[6], P2:=Emoji[7], P3:=Emoji[7], IsArc:=FALSE, Break:=FALSE), //4
-		(P1:=Emoji[7], P2:=Emoji[8], P3:=Emoji[9], IsArc:=TRUE, Break:=FALSE), //5
-		(P1:=Emoji[9], P2:=Emoji[10], P3:=Emoji[10], IsArc:=FALSE, Break:=FALSE),
-		(P1:=Emoji[10], P2:=Emoji[11], P3:=Emoji[12], IsArc:=TRUE, Break:=FALSE),
-		(P1:=Emoji[12], P2:=Emoji[1], P3:=Emoji[1], IsArc:=FALSE, Break:=TRUE),
-		(P1:=Emoji[1], P2:=Emoji[2], P3:=Emoji[2], IsArc:=FALSE, Break:=FALSE), //jump to 2 no tracing
-		(P1:=Emoji[2], P2:=Emoji[13], P3:=Emoji[13], IsArc:=FALSE, Break:=TRUE),
-		(P1:=Emoji[13], P2:=Emoji[14], P3:=Emoji[14], IsArc:=FALSE, Break:=FALSE), //jump to 14
-		(P1:=Emoji[14], P2:=Emoji[19], P3:=Emoji[19], IsArc:=FALSE, Break:=TRUE),
-		(P1:=Emoji[19], P2:=Emoji[18], P3:=Emoji[18], IsArc:=FALSE, Break:=FALSE),
-		(P1:=Emoji[18], P2:=Emoji[17], P3:=Emoji[16], IsArc:=TRUE, Break:=TRUE),
-		(P1:=Emoji[16], P2:=Emoji[15], P3:=Emoji[14], IsArc:=TRUE, Break:=TRUE),
-		(P1:=Emoji[14], P2:=Emoji[20], P3:=Emoji[20], IsArc:=FALSE, Break:=FALSE),// jump to 20
-		(P1:=Emoji[20], P2:=Emoji[5], P3:=Emoji[5], IsArc:=FALSE, Break:=TRUE)
+        (P1:=Emoji[1], P2:=Emoji[2], P3:=Emoji[3], IsArc:=TRUE, Break:=FALSE, ZNottouching:= FALSE), //1
+        (P1:=Emoji[3], P2:=Emoji[4], P3:=Emoji[4], IsArc:=FALSE, Break:=FALSE, ZNottouching:= FALSE), //2
+		(P1:=Emoji[4], P2:=Emoji[5], P3:=Emoji[6], IsArc:=TRUE, Break:=FALSE, ZNottouching:= FALSE), //3
+		(P1:=Emoji[6], P2:=Emoji[7], P3:=Emoji[7], IsArc:=FALSE, Break:=FALSE, ZNottouching:= FALSE), //4
+		(P1:=Emoji[7], P2:=Emoji[8], P3:=Emoji[9], IsArc:=TRUE, Break:=FALSE, ZNottouching:= FALSE), //5
+		(P1:=Emoji[9], P2:=Emoji[10], P3:=Emoji[10], IsArc:=FALSE, Break:=FALSE, ZNottouching:= FALSE),
+		(P1:=Emoji[10], P2:=Emoji[11], P3:=Emoji[12], IsArc:=TRUE, Break:=FALSE, ZNottouching:= FALSE),
+		(P1:=Emoji[12], P2:=Emoji[1], P3:=Emoji[1], IsArc:=FALSE, Break:=TRUE, ZNottouching:= FALSE),
+		(P1:=Emoji[1], P2:=Emoji[2], P3:=Emoji[2], IsArc:=FALSE, Break:=FALSE, ZNottouching:= TRUE), //jump to 2 no tracing
+		(P1:=Emoji[2], P2:=Emoji[13], P3:=Emoji[13], IsArc:=FALSE, Break:=TRUE, ZNottouching:= FALSE),
+		(P1:=Emoji[13], P2:=Emoji[14], P3:=Emoji[14], IsArc:=FALSE, Break:=FALSE, ZNottouching:= TRUE), //jump to 14
+		(P1:=Emoji[14], P2:=Emoji[19], P3:=Emoji[19], IsArc:=FALSE, Break:=TRUE, ZNottouching:= FALSE),
+		(P1:=Emoji[19], P2:=Emoji[18], P3:=Emoji[18], IsArc:=FALSE, Break:=FALSE, ZNottouching:= FALSE),
+		(P1:=Emoji[18], P2:=Emoji[17], P3:=Emoji[16], IsArc:=TRUE, Break:=TRUE, ZNottouching:= FALSE),
+		(P1:=Emoji[16], P2:=Emoji[15], P3:=Emoji[14], IsArc:=TRUE, Break:=TRUE, ZNottouching:= FALSE),
+		(P1:=Emoji[14], P2:=Emoji[20], P3:=Emoji[20], IsArc:=FALSE, Break:=FALSE, ZNottouching:= TRUE),// jump to 20
+		(P1:=Emoji[20], P2:=Emoji[5], P3:=Emoji[5], IsArc:=FALSE, Break:=TRUE, ZNottouching:= FALSE)
     ];
 
     CurrentIndex : INT := 1;
@@ -132,6 +133,7 @@ IF Reset THEN
     // Reset velocity
     CurSpeedX := 0.0;
     CurSpeedY := 0.0;
+	ModuleSpeed := 0.0;
     CurrentIndex := 1;
     ReturnHome := FALSE;
     t := 0.0;
@@ -158,7 +160,7 @@ IF MotionActive THEN
             MoveFB(
                 StartPos := HomePos,
                 TargetPos := CanvasP2,
-                MaxSpeed := MaxSpeed,
+                MaxSpeed := rMaxSpeed,
                 Accel := Accel,
                 t := t,
                 DecelerateAtEnd := TRUE,
@@ -178,7 +180,7 @@ IF MotionActive THEN
                 MoveFB(
                     StartPos := CanvasP1,
                     TargetPos := CanvasP2,
-                    MaxSpeed := MaxSpeed,
+                    MaxSpeed := rMaxSpeed,
                     Accel := Accel,
                     t := t,
                     DecelerateAtEnd := Path[CurrentIndex].Break,
@@ -191,7 +193,7 @@ IF MotionActive THEN
                     P1 := CanvasP1,
                     P2 := CanvasP2,
                     P3 := CanvasP3,
-                    MaxSpeed := MaxSpeed,
+                    MaxSpeed := rMaxSpeed,
                     Accel := Accel,
                     t := t,
                     DecelerateAtEnd := Path[CurrentIndex].Break,
@@ -204,7 +206,7 @@ IF MotionActive THEN
             MoveFB(
                 StartPos := ReturnStart, // Use last point of the path as start
                 TargetPos := HomePos,
-                MaxSpeed := MaxSpeed,
+                MaxSpeed := rMaxSpeed,
                 Accel := Accel,
                 t := t,
                 DecelerateAtEnd := Path[CurrentIndex].Break,
@@ -217,7 +219,7 @@ IF MotionActive THEN
         MovePI(
             CurPos := TCPAbs,
             TargetPos := Target,
-            MaxSpeed := MaxSpeed,
+            MaxSpeed := rMaxSpeed,
             Ts := cycle_time,
             Kp := Kp,
             Ki := Ki,
@@ -265,11 +267,7 @@ IF MotionActive THEN
             IF ABS(TCPAbs.X - Target.X) < max_error AND ABS(TCPAbs.Y - Target.Y) < max_error THEN
                 closing_distnace := FALSE; // Reset closing distance flag
 				
-				IF Go2Canvas THEN
-					bZnotTouching := FALSE; 
-				ELSE
-					bZnotTouching := TRUE; // if break we will elevate the robot z axis
-				END_IF
+				
 				
                 IF not Go2Canvas THEN
                    
@@ -282,7 +280,7 @@ IF MotionActive THEN
             IF ABS(TCPAbs.X - Target.X) < max_error AND ABS(TCPAbs.Y - Target.Y) < max_error THEN
                 CurrentIndex := CurrentIndex + 1;
                 t := 0.0; // Reset time for the next segment
-				 bZnotTouching := FALSE;
+				
             END_IF;
             
         END_IF
@@ -297,6 +295,12 @@ IF MotionActive THEN
             Target := HomePos;
             MotionActive := FALSE;
             ReturnHome := FALSE;
+			CurSpeedX:= 0;
+			CurSpeedY:= 0;
         END_IF;
     END_IF;
+	
+	ModuleSpeed:= SQRT(CurSpeedX*CurSpeedX+CurSpeedY*CurSpeedY);
+	bZnotTouching:= path[CurrentIndex].ZNottouching;
+	
 END_IF;

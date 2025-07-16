@@ -138,7 +138,7 @@ IF t < t_acc THEN
     s_t := v0 * t + 0.5 * Accel * t * t;
 
 // Constant speed phase or skipping deceleration
-ELSIF t < t_acc + t_const THEN      // no infinite run‑on
+ELSIF t < t_acc + t_const OR NOT DecelerateAtEnd THEN      // no infinite run‑on
     v := MaxSpeed;
     s_t := s_acc + v * (t - t_acc);
 
@@ -149,9 +149,7 @@ ELSIF t < t_total THEN
     s_t := s_acc + s_const + MaxSpeed * t_dec - 0.5 * Accel * t_dec * t_dec;
 
 // Motion complete - stop
-ELSE
-    v := 0.0;
-    s_t := ArcLength;
+
 END_IF;
 
 Angle := StartAngle + Dir * (s_t / Radius);
