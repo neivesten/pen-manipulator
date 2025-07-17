@@ -16,7 +16,7 @@ VAR
     Target : Pos2D := (X:=0.0, Y:=0.0);
     t : REAL := 0.0;         // Time since current segment started
     cycle_time : REAL := 0.01; // Simulation step time
-    rMaxSpeed : REAL := 25.0;
+    rMaxSpeed : REAL := 20.0;
     Accel : REAL := 15;
     // Gains for the PI controllers
     Kp : REAL := 2.0;
@@ -35,29 +35,31 @@ VAR
     Reset : BOOL := FALSE;
 
     
-//Emoji coordinates in the Emoji visu coordinate system
-	Emoji :  ARRAY[1..20] OF pos2D := [
-        (X:=35.0, Y:=175.0), // 1
-        (X:=40.0, Y:=135.0), // 2
-        (X:=80.0, Y:=130.0), // 3
-        (X:=540.0, Y:=130.0), // 4
-        (X:=580.0, Y:=135.0), // 5
-        (X:=585.0, Y:=175.0), // 6
-        (X:=585.0, Y:=430.0), // 7
-        (X:=580.0, Y:=470.0), // 8
-        (X:=540.0, Y:=475.0), // 9
-        (X:=80.0, Y:=475.0), // 10
-        (X:=40.0, Y:=470.0), // 11
-        (X:=35.0, Y:=430.0), // 12
-        (X:=170.0, Y:=275.0), // 13
-        (X:=235.0, Y:=325.0), // 14
-        (X:=235.0, Y:=250.0), // 15
-        (X:=310.0, Y:=270.0), // 16
-        (X:=390.0, Y:=250.0), // 17
-        (X:=390.0, Y:=325.0), // 18
-        (X:=310.0, Y:=425.0), // 19
-        (X:=450.0, Y:=275.0)  // 20
-    ];
+// Scaled Emoji coordinates for 250x250 image
+Emoji : ARRAY[1..20] OF pos2D := [
+    (X:=14.11, Y:=70.56),    // 1
+    (X:=16.13, Y:=54.44),    // 2
+    (X:=32.26, Y:=52.42),    // 3
+    (X:=217.74, Y:=52.42),   // 4
+    (X:=233.87, Y:=54.44),   // 5
+    (X:=235.89, Y:=70.56),   // 6
+    (X:=235.89, Y:=173.47),  // 7
+    (X:=233.87, Y:=189.60),  // 8
+    (X:=217.74, Y:=191.61),  // 9
+    (X:=32.26, Y:=191.61),   // 10
+    (X:=16.13, Y:=189.60),   // 11
+    (X:=14.11, Y:=173.47),   // 12
+    (X:=68.52, Y:=110.81),   // 13
+    (X:=94.36, Y:=130.04),   // 14
+    (X:=94.36, Y:=100.81),   // 15
+    (X:=125.0, Y:=108.87),   // 16
+    (X:=157.26, Y:=100.81),  // 17
+    (X:=157.26, Y:=130.04),  // 18
+    (X:=125.0, Y:=171.45),   // 19
+    (X:=181.45, Y:=110.81)   // 20
+];
+
+ 
 	Path : ARRAY[1..17] OF PathPoint := [
         (P1:=Emoji[1], P2:=Emoji[2], P3:=Emoji[3], IsArc:=TRUE, Break:=FALSE, ZNottouching:= FALSE), //1
         (P1:=Emoji[3], P2:=Emoji[4], P3:=Emoji[4], IsArc:=FALSE, Break:=FALSE, ZNottouching:= FALSE), //2
@@ -167,7 +169,7 @@ IF MotionActive THEN
                 SpeedX := CurSpeedX,
                 SpeedY := CurSpeedY
             );
-
+			bZnotTouching:= TRUE;
         // Moving throught the canvas path
         ELSIF NOT ReturnHome AND CurrentIndex <= PathLength THEN
             // Convert current path segment to global coordinates
@@ -214,6 +216,7 @@ IF MotionActive THEN
                 SpeedY := CurSpeedY
             );
             Target := HomePos;
+			bZnotTouching:= TRUE;
         END_IF
     ELSE // we're closing in to the point, using PI Control
         MovePI(
@@ -301,6 +304,9 @@ IF MotionActive THEN
     END_IF;
 	
 	ModuleSpeed:= SQRT(CurSpeedX*CurSpeedX+CurSpeedY*CurSpeedY);
-	bZnotTouching:= path[CurrentIndex].ZNottouching;
+	IF NOT (ReturnHome OR Go2Canvas) THEN
+		bZnotTouching:= path[CurrentIndex].ZNottouching;
+	END_IF
+	
 	
 END_IF;
