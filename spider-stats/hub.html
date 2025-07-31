@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spider Stats Hub</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 1rem; }
+        #graphs { display: flex; flex-wrap: wrap; gap: 1rem; list-style: none; padding: 0; }
+        .graph-item { padding: 0.5rem 1rem; background: #f3f3f3; border: 1px solid #ccc; cursor: grab; }
+        .dragging { opacity: 0.5; }
+        button { margin-top: 1rem; }
+    </style>
+</head>
+<body>
+    <h1>Saved Graphs</h1>
+    <ul id="graphs"></ul>
+    <button id="newGraph">Create New Graph</button>
+
+    <script>
+        function loadGraphs() {
+            const list = document.getElementById('graphs');
+            list.innerHTML = '';
+            const graphs = JSON.parse(localStorage.getItem('graphs') || '[]');
+            graphs.forEach((g, idx) => {
+                const li = document.createElement('li');
+                li.className = 'graph-item';
+                li.draggable = true;
+                li.textContent = g.name || `Graph ${idx + 1}`;
+                li.dataset.index = idx;
+                list.appendChild(li);
+            });
+        }
+
+        function saveOrder() {
+            const list = document.getElementById('graphs');
+            const graphs = Array.from(list.children).map((li, idx) => ({
+                name: li.textContent
+            }));
+            localStorage.setItem('graphs', JSON.stringify(graphs));
+        }
+
+        let dragged;
+        document.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('graph-item')) {
+                dragged = e.target;
+                e.target.classList.add('dragging');
+            }
+        });
+        document.addEventListener('dragend', (e) => {
+            if (e.target.classList.contains('graph-item')) {
+                e.target.classList.remove('dragging');
+                saveOrder();
+            }
+        });
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const list = document.getElementById('graphs');
+            const afterElement = Array.from(list.children).find(el => {
+                const rect = el.getBoundingClientRect();
+                return e.clientY < rect.top + rect.height / 2;
+            });
+            if (afterElement == null) {
+                list.appendChild(dragged);
+            } else {
+                list.insertBefore(dragged, afterElement);
+            }
+        });
+
+        document.getElementById('newGraph').addEventListener('click', () => {
+            window.location.href = '/';
+        });
+
+        loadGraphs();
+    </script>
+</body>
+</html>
